@@ -4,9 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:esri="http://schemas.esri.com/arcgis/runtime/2013"
-        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:materialDesign="clr-namespace:MaterialDesignThemes.Wpf;assembly=MaterialDesignThemes.Wpf"
         xmlns:local="clr-namespace:SmartNanjingTravel"
-        mc:Ignorable="d"
+         mc:Ignorable="d"
         Title="MainWindow" Height="600" Width="1000"
         Background="{DynamicResource MaterialDesign.Brush.Background}">
     <Window.Resources>
@@ -26,13 +26,14 @@
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Margin" Value="10,0,0,0"/>
         </Style>
-
-        <Style x:Key="ToolButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
-            <Setter Property="Width" Value="24"/>
-            <Setter Property="Height" Value="24"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="Margin" Value="2"/>
-            <Setter Property="Background" Value="Transparent"/>
+        <!-- 路线规划项样式 -->
+        <Style x:Key="RoutePointItem" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource MaterialDesign.Brush.Surface}"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="12"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Outline}"/>
         </Style>
     </Window.Resources>
     <Grid>
@@ -56,7 +57,7 @@
 
             <!-- 标题 -->
             <Border Grid.Row="0" 
-                    Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                    Background="{DynamicResource MaterialDesign.Brush}"
                     Padding="10,15"
                     CornerRadius="0,0,10,0">
                 <StackPanel>
@@ -64,7 +65,6 @@
                                FontSize="20" 
                                FontWeight="Bold" 
                                HorizontalAlignment="Center"
-                               
                                Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"/>
                     <TextBlock Text="南京文旅助手" 
                                FontSize="12" 
@@ -77,9 +77,9 @@
 
             <!-- 左侧导航菜单 -->
             <StackPanel Grid.Row="1" Margin="0,20,0,0">
-
                 <Button Style="{StaticResource SidebarButton}" 
-                        ToolTip="首页/总览">
+                        ToolTip="首页/总览"
+                        x:Name="HomeButton">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Home" Width="20" Height="20" Margin="0,0,10,0"/>
                         <TextBlock Text="景区总览"/>
@@ -87,7 +87,8 @@
                 </Button>
 
                 <Button Style="{StaticResource SidebarButton}" 
-                        ToolTip="游玩推荐">
+                        ToolTip="游玩推荐"
+                        x:Name="RecommendButton">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Compass" Width="20" Height="20" Margin="0,0,10,0"/>
                         <TextBlock Text="游玩推荐"/>
@@ -95,7 +96,9 @@
                 </Button>
 
                 <Button Style="{StaticResource SidebarButton}" 
-                        ToolTip="行程规划">
+                        ToolTip="行程规划"
+                        x:Name="RoutePlanningButton"
+                        Click="RoutePlanningButton_Click">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="MapMarkerPath" Width="20" Height="20" Margin="0,0,10,0"/>
                         <TextBlock Text="行程规划"/>
@@ -103,7 +106,10 @@
                 </Button>
 
                 <Button Style="{StaticResource SidebarButton}" 
-                        ToolTip="我的收藏">
+                        ToolTip="我的收藏"
+                        x:Name="FavoriteButton"
+                        Click="MyFavoritesButton_Click">
+                    <!-- 添加这行 -->
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Star" Width="20" Height="20" Margin="0,0,10,0"/>
                         <TextBlock Text="我的收藏"/>
@@ -115,7 +121,8 @@
             <StackPanel Grid.Row="7" Margin="10,0,10,20">
                 <Separator Style="{StaticResource MaterialDesignSeparator}" Margin="0,0,0,15"/>
                 <Button Style="{StaticResource SidebarButton}" 
-                        ToolTip="数据管理">
+                        ToolTip="数据管理"
+                        x:Name="DataManagementButton">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="DatabaseCog" Width="20" Height="20" Margin="0,0,10,0"/>
                         <TextBlock Text="数据管理"/>
@@ -132,10 +139,10 @@
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" 
-        Background="{DynamicResource MaterialDesign.Brush.Surface}"
-        Padding="20,15"
-        BorderBrush="{DynamicResource MaterialDesign.Brush.Outline}"
-        BorderThickness="0,0,0,1">
+                    Background="{DynamicResource MaterialDesign.Brush.Surface}"
+                    Padding="20,15"
+                    BorderBrush="{DynamicResource MaterialDesign.Brush.Outline}"
+                    BorderThickness="0,0,0,1">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -177,10 +184,555 @@
             </Border>
 
             <!-- 地图展示区 -->
-            <Border Grid.Row="1">
-                <esri:MapView Name="MyMapView" Map="{Binding Map, Source={StaticResource MapViewModel}, Mode=TwoWay}" 
-               />
-            </Border>
+            <Grid Grid.Row="1">
+                <esri:MapView Name="MyMapView" Map="{Binding Map, Source={StaticResource MapViewModel}, Mode=TwoWay}" />
+
+                <!-- 路线规划面板（默认折叠） -->
+                <Border x:Name="RoutePlanningPanel"
+                         Width="400"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Margin="20,20,0,0"
+                        Background="#FFFFFFFF"
+                        CornerRadius="8"
+                        Padding="0"
+                        Visibility="Collapsed"
+                        BorderBrush="#FFE0E0E0"
+                        BorderThickness="1">
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 面板标题栏 -->
+                        <Border Grid.Row="0" 
+                                Background="{DynamicResource MaterialDesign.Brush}"
+                                CornerRadius="8,8,0,0"
+                                Padding="15,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" 
+                                           Text="路线规划" 
+                                           FontSize="16" 
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                                           VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                                        Click="CloseRoutePlanningPanel_Click"
+                                        ToolTip="关闭">
+                                    <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <!-- 路线规划内容 -->
+                        <ScrollViewer Grid.Row="1" 
+                                      VerticalScrollBarVisibility="Auto"
+                                      Padding="15,15,15,0">
+                            <StackPanel>
+                                <!-- 起始点 -->
+                                <Border Style="{StaticResource RoutePointItem}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
+                                            <materialDesign:PackIcon Kind="MapMarker" 
+                                                                     Width="16" 
+                                                                     Height="16" 
+                                                                     Margin="0,0,8,0"
+                                                                     VerticalAlignment="Center"
+                                                                     Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                            <TextBlock Text="起始点" 
+                                                       FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <TextBox Grid.Row="1"
+                                                 x:Name="StartPointTextBox"
+                                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                 materialDesign:HintAssist.Hint="请输入起点位置或选择地图上的点"
+                                                 FontSize="14"
+                                                 Padding="10,8"
+                                                 BorderThickness="0"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 途径点（可动态添加） -->
+                                <ItemsControl x:Name="ViaPointsItemsControl" 
+                                              ItemsSource="{Binding ViaPoints}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource RoutePointItem}"
+                                                    Margin="0,0,0,10">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <StackPanel Orientation="Horizontal" 
+                                                                Grid.Row="0" 
+                                                                Margin="0,0,0,8">
+                                                        <materialDesign:PackIcon Kind="MapMarkerPlus" 
+                                                                                 Width="16" 
+                                                                                 Height="16" 
+                                                                                 Margin="0,0,8,0"
+                                                                                 VerticalAlignment="Center"
+                                                                                 Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                                        <TextBlock Text="途径点" 
+                                                                   FontWeight="SemiBold"
+                                                                   VerticalAlignment="Center"/>
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                                 Margin="10,0,0,0"
+                                                                VerticalAlignment="Center"
+                                                                  ToolTip="删除途径点"
+                                                              Click="DeleteViaPointButton_Click"
+                                                                     DataContext="{Binding}">
+                                                            <materialDesign:PackIcon Kind="MinusCircle" 
+                                                     Width="16" 
+                                                     Height="16"
+                                                     Foreground="{DynamicResource MaterialDesign.Brush.Error}"/>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <TextBox Grid.Row="1"
+                                                             Text="{Binding Address}"
+                                                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                             materialDesign:HintAssist.Hint="请输入途径点位置"
+                                                             FontSize="14"
+                                                             Padding="10,8"
+                                                             Margin="0,0,0,8"
+                                                             BorderThickness="0"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- 添加途径点按钮 -->
+                                <Button x:Name="AddViaPointButton"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        Margin="0,0,0,15"
+                                        Padding="10,8"
+                                        Click="AddViaPointButton_Click">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Plus" 
+                                                                 Width="16" 
+                                                                 Height="16" 
+                                                                 Margin="0,0,8,0"/>
+                                        <TextBlock Text="添加途径点"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- 目的地 -->
+                                <Border Style="{StaticResource RoutePointItem}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
+                                            <materialDesign:PackIcon Kind="Flag" 
+                                                                     Width="16" 
+                                                                     Height="16" 
+                                                                     Margin="0,0,8,0"
+                                                                     VerticalAlignment="Center"
+                                                                     Foreground="{DynamicResource MaterialDesign.Brush.Error}"/>
+                                            <TextBlock Text="目的地" 
+                                                       FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <TextBox Grid.Row="1"
+                                                 x:Name="DestinationTextBox"
+                                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                                 materialDesign:HintAssist.Hint="请输入目的地位置"
+                                                 FontSize="14"
+                                                 Padding="10,8"
+                                                 BorderThickness="0"/>
+                                    </Grid>
+                                </Border>
+
+
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- 底部操作按钮 -->
+                        <Border Grid.Row="2" 
+                                Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
+                                CornerRadius="0,0,8,8"
+                                Padding="15,12">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button x:Name="ClearRouteButton"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        Content="清空"
+                                        Margin="0,0,10,0"
+                                        Click="ClearRouteButton_Click"/>
+                                <Button x:Name="SearchRouteButton"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Content="开始导航"
+                                        Click="SearchRouteButton_Click">
+                                    <Button.ContentTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Navigation" 
+                                                                         Width="18" 
+                                                                         Height="18" 
+                                                                         Margin="0,0,8,0"/>
+                                                <TextBlock Text="开始导航"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </Button.ContentTemplate>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+                <!-- 我的收藏面板（默认折叠） -->
+                <Border x:Name="FavoritesPanel"
+                      Width="400"  HorizontalAlignment="Right" VerticalAlignment="Top"
+                      Margin="0,20,20,0" Background="#FFFFFFFF" CornerRadius="8" Padding="0"
+                      Visibility="Collapsed" BorderBrush="#FFE0E0E0" BorderThickness="1" Grid.Row="1">
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 面板标题栏 -->
+                        <Border Grid.Row="0"  Background="{DynamicResource MaterialDesign.Brush}"
+                                CornerRadius="8,8,0,0"   Padding="15,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Star" 
+                                             Width="20" 
+                                             Height="20" 
+                                             Margin="0,0,10,0"
+                                             Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                                             VerticalAlignment="Center"/>
+                                    <TextBlock Text="我的收藏" 
+                               FontSize="16" 
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                               VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <Button Grid.Column="1"
+                        Style="{StaticResource MaterialDesignIconButton}"
+                        Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                        Click="CloseFavoritesPanel_Click"
+                        ToolTip="关闭">
+                                    <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <!-- 收藏内容区 -->
+                        <ScrollViewer Grid.Row="1" 
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="15,15,15,0">
+                            <StackPanel>
+                                <!-- 收藏分类筛选 -->
+                                <Border Style="{StaticResource RoutePointItem}" 
+                        Margin="0,0,0,15">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <TextBlock Grid.Row="0" 
+                                   Text="筛选条件" 
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,10"/>
+
+                                        <WrapPanel Grid.Row="1" Orientation="Horizontal">
+                                            <ToggleButton x:Name="AllFilterButton"
+                                          Content="全部"
+                                          IsChecked="True"
+                                          Margin="0,0,10,5"
+                                          Padding="12,6"
+                                          Click="FilterButton_Click"/>
+                                            <ToggleButton x:Name="AttractionFilterButton"
+                                          Content="景点"
+                                          Margin="0,0,10,5"
+                                          Padding="12,6"
+                                          Click="FilterButton_Click"/>
+                                            <ToggleButton x:Name="RouteFilterButton"
+                                          Content="路线"
+                                          Margin="0,0,10,5"
+                                          Padding="12,6"
+                                          Click="FilterButton_Click"/>
+                                        </WrapPanel>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 收藏项列表 -->
+                                <ItemsControl x:Name="FavoritesItemsControl">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource RoutePointItem}"
+                                    Margin="0,0,0,10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+
+                                                    <!-- 类型图标 -->
+                                                    <materialDesign:PackIcon Grid.Column="0" 
+                                                             Grid.RowSpan="2"
+                                                             Kind="MapMarker" 
+                                                             Width="24" 
+                                                             Height="24" 
+                                                             Margin="0,0,10,0"
+                                                             VerticalAlignment="Top"
+                                                             Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
+
+                                                    <!-- 收藏项信息 -->
+                                                    <StackPanel Grid.Column="1" Grid.Row="0">
+                                                        <TextBlock Text="{Binding Name}" 
+                                                   FontSize="14" 
+                                                   FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Margin="0,0,0,4"/>
+                                                        <TextBlock Text="{Binding Type}" 
+                                                   FontSize="11"
+                                                   Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
+                                                   Margin="0,0,0,2"/>
+                                                        <TextBlock Text="{Binding Description}" 
+                                                   FontSize="12"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Margin="0,0,0,2"/>
+                                                    </StackPanel>
+
+                                                    <!-- 操作按钮 -->
+                                                    <StackPanel Grid.Column="2" 
+                                                Grid.Row="0"
+                                                Orientation="Horizontal"
+                                                VerticalAlignment="Top">
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                ToolTip="在地图上查看"
+                                                Click="ViewOnMapButton_Click"
+                                                Tag="{Binding}"
+                                                Margin="0,0,5,0">
+                                                            <materialDesign:PackIcon Kind="MapMarker" 
+                                                                     Width="16" 
+                                                                     Height="16"
+                                                                     Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                                        </Button>
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                ToolTip="删除收藏"
+                                                Click="DeleteFavoriteButton_Click"
+                                                Tag="{Binding}">
+                                                            <materialDesign:PackIcon Kind="Delete" 
+                                                                     Width="16" 
+                                                                     Height="16"
+                                                                     Foreground="{DynamicResource MaterialDesign.Brush.Error}"/>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <!-- 底部信息 -->
+                                                    <StackPanel Grid.Column="1" 
+                                                Grid.ColumnSpan="2"
+                                                Grid.Row="1"
+                                                Orientation="Horizontal"
+                                                Margin="0,5,0,0">
+                                                        <materialDesign:PackIcon Kind="Calendar" 
+                                                                 Width="12" 
+                                                                 Height="12"
+                                                                 Margin="0,0,4,0"
+                                                                 VerticalAlignment="Center"
+                                                                 Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                                        <TextBlock Text="{Binding AddedDate, StringFormat='收藏于：{0:yyyy-MM-dd}'}" 
+                                                   FontSize="10"
+                                                   Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
+                                                   VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- 空状态提示 -->
+                                <Border x:Name="EmptyStateBorder" 
+                        Style="{StaticResource RoutePointItem}"
+                        Margin="0,20,0,0"
+                        Visibility="Collapsed">
+                                    <StackPanel HorizontalAlignment="Center" 
+                                VerticalAlignment="Center"
+                                Margin="20">
+                                        <materialDesign:PackIcon Kind="StarOutline" 
+                                                 Width="48" 
+                                                 Height="48"
+                                                 Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
+                                                 Margin="0,0,0,15"/>
+                                        <TextBlock Text="暂无收藏"
+                                   FontSize="16"
+                                   FontWeight="Medium"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
+                                   Margin="0,0,0,8"/>
+                                        <TextBlock Text="您还没有收藏任何景点或路线"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
+                                   Opacity="0.7"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- 底部操作按钮 -->
+                        <Border Grid.Row="2" 
+                Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
+                CornerRadius="0,0,8,8"
+                Padding="15,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 收藏数量统计 -->
+                                <TextBlock Grid.Column="0"
+                           x:Name="FavoritesCountText"
+                           Text="共 0 个收藏"
+                           FontSize="12"
+                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
+                           VerticalAlignment="Center"/>
+
+                                <!-- 操作按钮 -->
+                                <StackPanel Grid.Column="1" 
+                            Orientation="Horizontal">
+                                    <Button x:Name="ClearAllFavoritesButton"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Content="清空所有"
+                            Margin="0,0,10,0"
+                            Click="ClearAllFavoritesButton_Click"/>
+                                    <Button x:Name="ExportFavoritesButton"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Click="ExportFavoritesButton_Click">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Export" 
+                                                     Width="18" 
+                                                     Height="18" 
+                                                     Margin="0,0,8,0"/>
+                                            <TextBlock Text="导出收藏"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+                <!-- 新增：图层控制面板（默认折叠） -->
+                <Border x:Name="LayerControlPanel"
+            Width="300"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Bottom"
+            Margin="0,0,20,80"
+            Background="#FFFFFFFF"
+            CornerRadius="8"
+            Padding="0"
+            Visibility="Collapsed"
+            BorderBrush="#FFE0E0E0"
+            BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 面板标题栏 -->
+                        <Border Grid.Row="0" 
+                    Background="{DynamicResource MaterialDesign.Brush}"
+                    CornerRadius="8,8,0,0"
+                    Padding="15,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" 
+                               Text="图层控制" 
+                               FontSize="16" 
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                               VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+                            Style="{StaticResource MaterialDesignIconButton}"
+                            Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                            Click="CloseLayerControlPanel_Click"
+                            ToolTip="关闭">
+                                    <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <!-- 图层列表 -->
+                        <ScrollViewer Grid.Row="1" 
+                          VerticalScrollBarVisibility="Auto"
+                          Padding="15">
+                            <ItemsControl ItemsSource="{Binding LayerItems, Source={StaticResource MapViewModel}}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="0,8,0,8">
+                                            <CheckBox IsChecked="{Binding IsVisible, Mode=TwoWay}" 
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,10,0"/>
+                                            <TextBlock Text="{Binding Name}" 
+                                           FontSize="14"
+                                           VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <!-- 新增：右下角图层控制浮动按钮 -->
+                <Button x:Name="LayerControlButton"
+            Style="{StaticResource MaterialDesignFloatingActionButton}"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Bottom"
+            Margin="0,0,20,20"
+            Width="56"
+            Height="56"
+            Click="LayerControlButton_Click">
+                    <materialDesign:PackIcon Kind="Layers" Width="28" Height="28"/>
+                </Button>
+
+            </Grid>
         </Grid>
     </Grid>
 </Window>
