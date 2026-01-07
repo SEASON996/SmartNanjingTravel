@@ -1,0 +1,242 @@
+﻿<Window x:Class="SmartNanjingTravel.ScenicInfoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="景点详情" 
+        Width="350"
+        Height="500"
+        MaxWidth="400"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize">
+
+    <Border Background="Transparent" MouseDown="Window_MouseDown">
+        <materialDesign:Card
+            Width="330"
+            Style="{StaticResource MaterialDesignOutlinedCard}"
+            Margin="10"
+            Padding="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <!-- 标题栏 -->
+                    <RowDefinition Height="160" />
+                    <!-- 图片区域 -->
+                    <RowDefinition Height="*" />
+                    <!-- 内容区域 -->
+                    <RowDefinition Height="Auto" />
+                    <!-- 底部按钮区域 -->
+                </Grid.RowDefinitions>
+
+                <!-- 顶部标题栏 -->
+                <Border Grid.Row="0"
+                        Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
+                        CornerRadius="8,8,0,0"
+                        Padding="16,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 标题 -->
+                        <TextBlock Grid.Column="0"
+                                   Text="景点信息"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource MaterialDesign.Brush.Primary}" />
+                        <Button Grid.Column="1"
+                                Width="32"
+                                Height="32"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                ToolTip="关闭"
+                                Click="BtnClose_Click">
+                            <materialDesign:PackIcon 
+                                Kind="Close" 
+                                Width="18" 
+                                Height="18"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Primary}" />
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- 图片区域 -->
+                <Image
+                    Grid.Row="1"
+                    Height="160"
+                    Source="/SmartNanjingTravel;component/Image/Changsha.gif"
+                    Stretch="UniformToFill">
+                    <Image.OpacityMask>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Offset="0" Color="Black"/>
+                            <GradientStop Offset="0.9" Color="Black"/>
+                            <GradientStop Offset="1" Color="Transparent"/>
+                        </LinearGradientBrush>
+                    </Image.OpacityMask>
+                </Image>
+
+                <!-- 图片上的浮动按钮 -->
+                <Button
+                    Grid.Row="1"
+                    Margin="0,0,16,-20"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}"
+                    Click="BtnGoHere_Click"
+                    ToolTip="导航到此处">
+                    <materialDesign:PackIcon Kind="Navigation" />
+                </Button>
+
+                <!-- 内容区域 -->
+                <StackPanel
+                    Grid.Row="2"
+                    Margin="16,24,16,0">
+                    <!-- 景点名称 -->
+                    <TextBlock
+                        x:Name="TxtName"
+                        FontSize="18"
+                        FontWeight="Bold"
+                        Margin="0,0,0,12"
+                        TextWrapping="Wrap"
+                        Foreground="{DynamicResource MaterialDesign.Brush.Primary}">
+                        景点名称
+                    </TextBlock>
+
+                    <!-- 评分和行政区信息 -->
+                    <StackPanel Margin="0,0,0,16">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <materialDesign:PackIcon 
+                                Kind="Star"
+                                Width="16"
+                                Height="16"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                            <TextBlock 
+                                x:Name="TxtRating"
+                                VerticalAlignment="Center"
+                                FontSize="14">
+                                评分：暂无
+                            </TextBlock>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon 
+                                Kind="MapMarker"
+                                Width="16"
+                                Height="16"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center"
+                                Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                            <TextBlock 
+                                x:Name="TxtDistrict"
+                                VerticalAlignment="Center"
+                                FontSize="14">
+                                行政区：未知
+                            </TextBlock>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- 营业时间 -->
+                    <Border
+                        Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
+                        CornerRadius="6"
+                        Padding="12"
+                        Margin="0,0,0,16">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <materialDesign:PackIcon 
+                                    Kind="Clock"
+                                    Width="16"
+                                    Height="16"
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center"
+                                    Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                <TextBlock 
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    VerticalAlignment="Center"
+                                    Foreground="{DynamicResource MaterialDesign.Brush.Secondary}">
+                                    营业时间
+                                </TextBlock>
+                            </StackPanel>
+                            <TextBlock 
+                                x:Name="TxtOpenTime"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Margin="0,0,0,0">
+                                暂无营业时间信息
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 其他信息占位 -->
+                    <Border
+                        Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
+                        CornerRadius="6"
+                        Padding="12"
+                        Margin="0,0,0,16">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <materialDesign:PackIcon 
+                                    Kind="Information"
+                                    Width="16"
+                                    Height="16"
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center"
+                                    Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                <TextBlock 
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    VerticalAlignment="Center"
+                                    Foreground="{DynamicResource MaterialDesign.Brush.Secondary}">
+                                    景点简介
+                                </TextBlock>
+                            </StackPanel>
+                            <TextBlock 
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                TextTrimming="CharacterEllipsis"
+                                MaxHeight="60">
+                                智游金陵为您提供南京丰富的文化旅游景点信息，欢迎探索六朝古都的魅力。
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- 底部操作按钮（简化版） -->
+                <StackPanel
+                    Grid.Row="3"
+                    Margin="8"
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal">
+                    <!-- 收藏按钮 -->
+                    <Button
+                        Width="36"
+                        Height="36"
+                        Padding="2,0,2,0"
+                        materialDesign:RippleAssist.IsCentered="True"
+                        Style="{StaticResource MaterialDesignToolButton}"
+                        ToolTip="收藏此景点">
+                        <materialDesign:PackIcon Kind="HeartOutline" />
+                    </Button>
+
+                    <!-- 分享按钮 -->
+                    <Button
+                        Width="36"
+                        Height="36"
+                        Padding="2,0,2,0"
+                        materialDesign:RippleAssist.IsCentered="True"
+                        Style="{StaticResource MaterialDesignToolButton}"
+                        ToolTip="分享">
+                        <materialDesign:PackIcon Kind="ShareVariant" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </materialDesign:Card>
+    </Border>
+</Window>

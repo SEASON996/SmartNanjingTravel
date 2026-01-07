@@ -1,4 +1,9 @@
-﻿using Esri.ArcGISRuntime.Mapping;
+﻿using Esri.ArcGISRuntime.Data;
+using Esri.ArcGISRuntime.Geometry;
+using Esri.ArcGISRuntime.Mapping;
+using Esri.ArcGISRuntime.UI;
+using Esri.ArcGISRuntime.UI.Controls;
+
 using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows;
@@ -10,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using SmartNanjingTravel.ViewModels;
 
 namespace SmartNanjingTravel
 {
@@ -18,16 +24,82 @@ namespace SmartNanjingTravel
     /// </summary>
     public partial class MainWindow : Window
     {
-
+        private AmapPoiViewModel _amapPoiViewModel;
 
         public ObservableCollection<string> ViaPoints { get; set; } = new ObservableCollection<string>();
 
         public MainWindow()
         {
             InitializeComponent();
+            _amapPoiViewModel = new AmapPoiViewModel();
 
             // 设置ItemsControl的数据源
             ViaPointsItemsControl.ItemsSource = ViaPoints;
+        }
+
+        private async void HomeButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // 设置查询关键词为南京的主要景点类型
+                _amapPoiViewModel.InputAddress = "景点";
+
+                // 调用查询方法
+                await _amapPoiViewModel.QueryPoiAsync(MyMapView);
+
+                // 定位到南京区域
+                await MyMapView.SetViewpointAsync(new Viewpoint(
+                    new MapPoint(118.8, 32.05, SpatialReferences.Wgs84),
+                    50000));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"加载景点失败：{ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // 地图点击事件处理方法
+        private async void MyMapView_GeoViewTapped(object sender, GeoViewInputEventArgs e)
+        {
+            try
+            {
+                // 1. 查找ScenicSpotsOverlay叠加层
+                var scenicOverlay = MyMapView.GraphicsOverlays
+                    .FirstOrDefault(o => o.Id == "ScenicSpotsOverlay");
+
+                // 如果没有景点叠加层或叠加层为空，直接返回
+                if (scenicOverlay == null || scenicOverlay.Graphics.Count == 0)
+                {
+                    return;
+                }
+
+                // 2. 获取点击位置的Graphic（景点点位）
+                IdentifyGraphicsOverlayResult result = await MyMapView.IdentifyGraphicsOverlayAsync(
+                    scenicOverlay,
+                    e.Position,
+                    10, // 点击容差（像素），避免点击偏差
+                    false);
+
+                // 3. 没有点击到景点，直接返回
+                if (result.Graphics.Count == 0) return;
+
+                // 4. 获取点击的景点Graphic，提取信息
+                Graphic scenicGraphic = result.Graphics[0];
+                string name = scenicGraphic.Attributes["名称"]?.ToString() ?? "未知景点";
+                string rating = scenicGraphic.Attributes["评分"]?.ToString() ?? "暂无评分";
+                string district = scenicGraphic.Attributes["行政区"]?.ToString() ?? "未知行政区";
+                string openTime = scenicGraphic.Attributes["开门时间"]?.ToString() ?? "暂无营业时间";
+
+                // 5. 显示景点详情窗口
+                ScenicInfoWindow infoWindow = new ScenicInfoWindow(name, rating, district, openTime);
+                infoWindow.Owner = this;
+                infoWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"点击景点时出错：{ex.Message}");
+            }
         }
 
 
