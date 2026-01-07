@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -25,10 +25,9 @@ namespace SmartNanjingTravel
         {
             _map = new Map(SpatialReferences.WebMercator)
             {
-                InitialViewpoint = new Viewpoint(new Envelope(-180, -85, 180, 85, SpatialReferences.Wgs84)),
-#warning To use ArcGIS location services (including basemaps) specify your API Key access token or require the user to sign in using a valid ArcGIS account.
-                Basemap = new Basemap(BasemapStyle.ArcGISStreets)
+                InitialViewpoint = new Viewpoint(new Envelope(118.5, 31.5, 119.5, 32.5, SpatialReferences.Wgs84))
             };
+            SetGaodeBaseMap();
         }
 
         private Map _map;
@@ -42,6 +41,19 @@ namespace SmartNanjingTravel
             set { _map = value; OnPropertyChanged(); }
         }
 
+        private void SetGaodeBaseMap()
+        {
+            WebTiledLayer gaodeLayer = new WebTiledLayer(
+                "https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={col}&y={row}&z={level}",
+                new List<string> { "1", "2", "3", "4", "5" })
+            {
+                Attribution = "Map data ©2015 AutoNavi - GS(2015)2080号",
+                Name = "Gaode Map"
+            };
+            Basemap basemap = new Basemap();
+            basemap.BaseLayers.Add(gaodeLayer);
+            _map.Basemap = basemap;
+        }
         /// <summary>
         /// Raises the <see cref="MapViewModel.PropertyChanged" /> event
         /// </summary>

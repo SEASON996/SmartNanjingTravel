@@ -4,14 +4,175 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:esri="http://schemas.esri.com/arcgis/runtime/2013"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:local="clr-namespace:SmartNanjingTravel"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
+        Title="MainWindow" Height="600" Width="1000"
         Background="{DynamicResource MaterialDesign.Brush.Background}">
     <Window.Resources>
         <local:MapViewModel x:Key="MapViewModel" />
+        <!-- 自定义样式 -->
+        <Style x:Key="SidebarButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Margin" Value="10,5"/>
+            <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="20"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="15,0"/>
+        </Style>
+        <Style x:Key="SearchButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignFloatingActionButton}">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="10,0,0,0"/>
+        </Style>
     </Window.Resources>
     <Grid>
-        <esri:MapView Map="{Binding Map, Source={StaticResource MapViewModel}}" />
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="160" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- 左侧导航栏 -->
+        <Grid Grid.Column="0" Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- 标题 -->
+            <Border Grid.Row="0" 
+                    Background="{DynamicResource MaterialDesign.Brush.Primary}"
+                    Padding="10,15"
+                    CornerRadius="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="智游金陵" 
+                               FontSize="20" 
+                               FontWeight="Bold" 
+                               HorizontalAlignment="Center"
+                               
+                               Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"/>
+                    <TextBlock Text="南京文旅助手" 
+                               FontSize="12" 
+                               HorizontalAlignment="Center"
+                               Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                               Opacity="0.9"
+                               Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- 左侧导航菜单 -->
+            <StackPanel Grid.Row="1" Margin="0,20,0,0">
+
+                <Button Style="{StaticResource SidebarButton}" 
+                        ToolTip="首页/总览">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Home" Width="20" Height="20" Margin="0,0,10,0"/>
+                        <TextBlock Text="景区总览"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource SidebarButton}" 
+                        ToolTip="游玩推荐">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Compass" Width="20" Height="20" Margin="0,0,10,0"/>
+                        <TextBlock Text="游玩推荐"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource SidebarButton}" 
+                        ToolTip="行程规划">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="MapMarkerPath" Width="20" Height="20" Margin="0,0,10,0"/>
+                        <TextBlock Text="行程规划"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Style="{StaticResource SidebarButton}" 
+                        ToolTip="我的收藏">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Star" Width="20" Height="20" Margin="0,0,10,0"/>
+                        <TextBlock Text="我的收藏"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <!-- 底部数据管理 -->
+            <StackPanel Grid.Row="7" Margin="10,0,10,20">
+                <Separator Style="{StaticResource MaterialDesignSeparator}" Margin="0,0,0,15"/>
+                <Button Style="{StaticResource SidebarButton}" 
+                        ToolTip="数据管理">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="DatabaseCog" Width="20" Height="20" Margin="0,0,10,0"/>
+                        <TextBlock Text="数据管理"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- 右侧主内容区 -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" 
+        Background="{DynamicResource MaterialDesign.Brush.Surface}"
+        Padding="20,15"
+        BorderBrush="{DynamicResource MaterialDesign.Brush.Outline}"
+        BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 左列：搜索栏 -->
+                    <materialDesign:Card Grid.Column="0" 
+                             Padding="10"
+                             UniformCornerRadius="8"
+                             Margin="0,0,15,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 搜索输入框 -->
+                            <TextBox x:Name="SearchTextBox"
+                                     Grid.Column="0"
+                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                     materialDesign:HintAssist.Hint="搜索景点名称、类型或区域..."
+                                     FontSize="14"
+                                     Height="45"
+                                     VerticalContentAlignment="Center"
+                                     Margin="0,0,10,0"
+                                     Padding="15,0,10,0"
+                                     BorderThickness="0"/>
+
+                            <!-- 搜索按钮 -->
+                            <Button Grid.Column="1"
+                                    Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                    ToolTip="搜索">
+                                <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20"/>
+                            </Button>
+                        </Grid>
+                    </materialDesign:Card>
+                </Grid>
+            </Border>
+
+            <!-- 地图展示区 -->
+            <Border Grid.Row="1">
+                <esri:MapView Name="MyMapView" Map="{Binding Map, Source={StaticResource MapViewModel}, Mode=TwoWay}" 
+               />
+            </Border>
+        </Grid>
     </Grid>
 </Window>
