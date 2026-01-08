@@ -12,21 +12,35 @@ namespace SmartNanjingTravel.Services
     /// </summary>
     public class FavoriteService
     {
-        private string _databasePath = "D:\\111.db";
+        private string? _databasePath;
 
         /// <summary>
         /// 初始化数据库
         /// </summary>
+        /// 
+        public FavoriteService()
+        {
+            // 获取当前程序集所在目录
+            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+            // 数据库放在可执行文件所在目录的 Data 文件夹中
+            string dataDirectory = Path.Combine(baseDirectory, "Data");
+
+            // 确保 Data 目录存在
+            if (!Directory.Exists(dataDirectory))
+            {
+                Directory.CreateDirectory(dataDirectory);
+            }
+
+            // 数据库文件路径
+            _databasePath = Path.Combine(dataDirectory, "Travel.db");
+
+            Console.WriteLine($"数据库路径: {_databasePath}");
+        }
         public void InitializeDatabase()
         {
             try
             {
-                // 确保数据库目录存在
-                string directory = Path.GetDirectoryName(_databasePath);
-                if (!Directory.Exists(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
 
                 using (var connection = new SqliteConnection($"Data Source={_databasePath}"))
                 {

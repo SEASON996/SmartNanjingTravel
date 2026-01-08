@@ -12,6 +12,13 @@
 
   <ItemGroup>
     <None Remove="Image\icons1.png" />
+    <None Remove="Travel.db" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Data\Travel.db">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
