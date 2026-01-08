@@ -135,6 +135,7 @@ namespace SmartNanjingTravel
             // 点击指北针，地图恢复正北
             await MyMapView.SetViewpointRotationAsync(0);
         }
+        private GraphicsOverlay _scenicSpotsOverlay;
         private async void HomeButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -373,10 +374,7 @@ namespace SmartNanjingTravel
 
 
         // 新增：关闭图层控制面板
-        private void CloseLayerControlPanel_Click(object sender, RoutedEventArgs e)
-        {
-            LayerControlPanel.Visibility = Visibility.Collapsed;
-        }
+        
         // 统一管理所有侧边栏/浮动面板的显示与隐藏
         private void SwitchPanel(FrameworkElement panelToShow)
         {
@@ -385,7 +383,8 @@ namespace SmartNanjingTravel
     {
         RoutePlanningPanel,
         FavoritesPanel,
-        LayerControlPanel // 如果图层面板也要互斥，就加在这里
+        LayerControlPanel,
+        RecommendationPanel// 如果图层面板也要互斥，就加在这里
     };
 
             // 2. 遍历处理：如果要显示的面板就是当前点击的，则显示；其他全部隐藏
@@ -399,6 +398,19 @@ namespace SmartNanjingTravel
                 {
                     panel.Visibility = Visibility.Collapsed;
                 }
+            }
+        }
+        private void CloseLayerControlPanel_Click(object sender, RoutedEventArgs e)
+        {
+            LayerControlPanel.Visibility = Visibility.Collapsed;
+
+            // 找到并清除景点叠加层的所有 Graphic（包括点和名称标签）
+            var scenicOverlay = MyMapView.GraphicsOverlays
+                .FirstOrDefault(o => o.Id == "ScenicSpotsOverlay");
+
+            if (scenicOverlay != null)
+            {
+                scenicOverlay.Graphics.Clear();  // 这会移除所有景点点位和名称
             }
         }
         // 点击行程规划
@@ -426,5 +438,95 @@ namespace SmartNanjingTravel
                 SwitchPanel(LayerControlPanel);
             }
         }
+        // 在MainWindow.xaml.cs中添加以下方法
+
+        // 游玩推荐按钮点击事件
+        private void RecommendButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 先隐藏其他面板
+            RoutePlanningPanel.Visibility = Visibility.Collapsed;
+            FavoritesPanel.Visibility = Visibility.Collapsed;
+
+            // 显示游玩推荐面板
+            RecommendationPanel.Visibility = Visibility.Visible;
+        }
+
+        // 关闭游玩推荐面板
+        private void CloseRecommendationPanel_Click(object sender, RoutedEventArgs e)
+        {
+            RecommendationPanel.Visibility = Visibility.Collapsed;
+        }
+
+        // 主题按钮点击事件
+        private void ThemeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button)
+            {
+                string themeName = "";
+
+                // 根据按钮名称确定主题
+                if (button == SixDynastiesButton) themeName = "六朝古都探秘";
+                else if (button == RepublicanButton) themeName = "民国风情之旅";
+                else if (button == RedMemoryButton) themeName = "红色记忆寻访";
+                else if (button == CityWallButton) themeName = "明城墙徒步";
+
+                // 这里可以调用数据库查询该主题的推荐路线
+                // 目前先显示提示信息
+                MessageBox.Show($"正在为您加载【{themeName}】主题路线...\n\n" +
+                               "功能说明：\n" +
+                               "1. 地图上将高亮显示相关景点位置\n" +
+                               "2. 显示推荐的游览路线\n" +
+                               "3. 提供详细的景点介绍\n\n" +
+                               "（数据库功能待完善）",
+                               "主题路线推荐",
+                               MessageBoxButton.OK,
+                               MessageBoxImage.Information);
+
+                // TODO: 调用地图高亮显示相关景点和路线
+                // HighlightThemeOnMap(themeName);
+            }
+        }
+
+        // 季节按钮点击事件
+        private void SeasonButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button)
+            {
+                string seasonName = "";
+
+                // 根据按钮名称确定季节
+                if (button == SpringButton) seasonName = "春游南京";
+                else if (button == SummerButton) seasonName = "夏游南京";
+                else if (button == AutumnButton) seasonName = "秋游南京";
+                else if (button == WinterButton) seasonName = "冬游南京";
+
+                // 这里可以调用数据库查询该季节的推荐路线
+                // 目前先显示提示信息
+                MessageBox.Show($"正在为您加载【{seasonName}】季节路线...\n\n" +
+                               "功能说明：\n" +
+                               "1. 显示该季节最佳观赏景点\n" +
+                               "2. 推荐适合该季节的户外活动\n" +
+                               "3. 提供天气和穿着建议\n\n" +
+                               "（数据库功能待完善）",
+                               "季节路线推荐",
+                               MessageBoxButton.OK,
+                               MessageBoxImage.Information);
+
+                // TODO: 调用地图高亮显示季节推荐景点
+                // HighlightSeasonOnMap(seasonName);
+            }
+        }
+
+        // 查看所有推荐
+        private void ViewAllRecommendations_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("查看所有推荐功能待开发\n\n" +
+                           "将显示所有主题和季节的推荐汇总，\n" +
+                           "包含景点分布图和详细路线规划。",
+                           "所有推荐",
+                           MessageBoxButton.OK,
+                           MessageBoxImage.Information);
+        }
+        
     }
 }
