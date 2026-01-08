@@ -215,14 +215,18 @@ x:Name="ImgScenic"
                     HorizontalAlignment="Right"
                     Orientation="Horizontal">
                     <!-- 收藏按钮 -->
+                    <!-- 收藏按钮 -->
                     <Button
-                        Width="36"
-                        Height="36"
-                        Padding="2,0,2,0"
-                        materialDesign:RippleAssist.IsCentered="True"
-                        Style="{StaticResource MaterialDesignToolButton}"
-                        ToolTip="收藏此景点">
-                        <materialDesign:PackIcon Kind="HeartOutline" />
+    Width="36"
+    Height="36"
+    Padding="2,0,2,0"
+    x:Name="FavoriteButton"
+    materialDesign:RippleAssist.IsCentered="True"
+    Style="{StaticResource MaterialDesignToolButton}"
+    ToolTip="收藏此景点"
+    Click="FavoriteButton_Click">
+                        <materialDesign:PackIcon x:Name="FavoriteIcon" 
+                            Kind="HeartOutline" />
                     </Button>
 
                     <!-- 分享按钮 -->

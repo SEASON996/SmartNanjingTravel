@@ -5,6 +5,8 @@ using Esri.ArcGISRuntime.Reduction;
 using Esri.ArcGISRuntime.Symbology;
 using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.UI.Controls;
+using Microsoft.Data.Sqlite;
+using SmartNanjingTravel.Data;
 using SmartNanjingTravel.Models.Amap;
 using System;
 using System.Collections.Generic;
@@ -132,10 +134,10 @@ namespace SmartNanjingTravel.ViewModels
             }
         }
 
+        // 修改后的完整方法
         public async Task AddScenicSpotsToMap(Esri.ArcGISRuntime.UI.Controls.MapView mapView)
         {
             // --- 0. 准备工作：清理旧图层 ---
-            // 我们的目标是创建一个 FeatuerLayer，所以要检查并清理旧的 FeatureLayer
             var oldLayer = mapView.Map.OperationalLayers.FirstOrDefault(l => l.Id == "ScenicSpotsLayer");
             if (oldLayer != null)
             {
@@ -152,14 +154,17 @@ namespace SmartNanjingTravel.ViewModels
             if (AddressInfoList == null || AddressInfoList.Count == 0) return;
 
             // --- 1. 定义 FeatureCollectionTable 的结构 (Schema) ---
-            // 我们需要定义字段，这就像是在定义数据库表的列
             List<Field> fields = new List<Field>
     {
+        new Field(FieldType.Text, "POI_ID", "景点ID", 100),
         new Field(FieldType.Text, "Name", "名称", 100),
         new Field(FieldType.Text, "Rating", "评分", 50),
         new Field(FieldType.Text, "Adname", "行政区", 100),
         new Field(FieldType.Text, "Opentime", "开门时间", 200),
-        new Field(FieldType.Text, "ImageUrl", "图片", 255)
+        new Field(FieldType.Text, "Address", "地址", 500),
+        new Field(FieldType.Text, "Photos", "图片", 255),
+        new Field(FieldType.Text, "Longitude", "经度", 50),
+        new Field(FieldType.Text, "Latitude", "纬度", 50)
     };
 
             // 创建表，指定几何类型为点，坐标系为 WGS84
@@ -167,20 +172,23 @@ namespace SmartNanjingTravel.ViewModels
 
             Uri iconUri = new Uri("pack://application:,,,/SmartNanjingTravel;component/image/icons1.png");
 
-            // 创建图片符号（仅用URI，无任何流/字节数组）
+            // 创建图片符号
             Esri.ArcGISRuntime.Symbology.PictureMarkerSymbol picSymbol = new Esri.ArcGISRuntime.Symbology.PictureMarkerSymbol(iconUri)
             {
                 Width = 20,
                 Height = 35,
-                OffsetY = 12 // 图片中心对准点位
+                OffsetY = 12
             };
             featureTable.Renderer = new Esri.ArcGISRuntime.Symbology.SimpleRenderer(picSymbol);
 
-            // --- 3. 填充数据 ---
+            // --- 2. 填充数据 ---
             List<Feature> featuresToAdd = new List<Feature>();
             List<Esri.ArcGISRuntime.Geometry.MapPoint> validPoints = new List<Esri.ArcGISRuntime.Geometry.MapPoint>();
 
-            await featureTable.LoadAsync(); // 加载表以便写入
+            await featureTable.LoadAsync();
+
+            // 准备一个集合，用于存储POI ID到AddressInfo的映射
+            Dictionary<int, AddressInfo> poiIdMap = new Dictionary<int, AddressInfo>();
 
             foreach (var info in AddressInfoList)
             {
@@ -190,34 +198,51 @@ namespace SmartNanjingTravel.ViewModels
                 var point = new Esri.ArcGISRuntime.Geometry.MapPoint(lon, lat, SpatialReferences.Wgs84);
                 validPoints.Add(point);
 
+                // 【关键修改】生成一个稳定的POI_ID
+                // 使用景点名称和坐标的哈希值作为POI_ID，确保同一景点在不同查询中具有相同的ID
+                int poiId = GenerateStablePoiId(info.Name, lon, lat);
+
+                // 将POI_ID和AddressInfo存储到映射中，供后续使用
+                if (!poiIdMap.ContainsKey(poiId))
+                {
+                    poiIdMap[poiId] = info;
+                }
+
                 // 创建 Feature 并填入属性
                 var feature = featureTable.CreateFeature();
                 feature.Geometry = point;
+
+                // 【关键修改】添加POI_ID到Feature属性中
+                feature.SetAttributeValue("POI_ID", poiId.ToString());
                 feature.SetAttributeValue("Name", info.Name);
                 feature.SetAttributeValue("Rating", info.Rating);
                 feature.SetAttributeValue("Adname", info.Adname);
                 feature.SetAttributeValue("Opentime", info.Opentime);
-                feature.SetAttributeValue("ImageUrl",info.Photos);
+                feature.SetAttributeValue("Address", info.Address ?? "暂无地址");
+                feature.SetAttributeValue("Photos", info.Photos);
+                feature.SetAttributeValue("Longitude", info.Longitude);
+                feature.SetAttributeValue("Latitude", info.Latitude);
 
                 featuresToAdd.Add(feature);
             }
 
-            // 批量添加 Feature，性能更好
+            // 批量添加 Feature
             if (featuresToAdd.Any())
             {
                 await featureTable.AddFeaturesAsync(featuresToAdd);
             }
 
-            // 1. 创建一个 FeatureCollection
-            var featureCollection = new FeatureCollection();
+            // --- 3. 将POI数据保存到本地数据库（如果需要）---
+            // 这可以确保收藏功能有可用的POI_ID
+            SavePoiDataToLocalDatabase(poiIdMap);
 
-            // 2. 将你的 table 添加到 collection 中
+            // --- 4. 创建并显示地图图层 ---
+            var featureCollection = new FeatureCollection();
             featureCollection.Tables.Add(featureTable);
 
-            // 3. 使用 FeatureCollectionLayer 来显示
             var featureCollectionLayer = new FeatureCollectionLayer(featureCollection)
             {
-                Id = "ScenicSpotsLayer", // 给整个图层组起个名字
+                Id = "ScenicSpotsLayer",
                 Name = "景点图层组"
             };
 
@@ -227,30 +252,25 @@ namespace SmartNanjingTravel.ViewModels
             }
             mapView.Map.OperationalLayers.Add(featureCollectionLayer);
             await featureCollectionLayer.LoadAsync();
+
+            // --- 5. 配置聚合和标签 ---
             var subLayer = featureCollectionLayer.Layers.FirstOrDefault(l => l.FeatureTable == featureTable);
             if (subLayer != null)
             {
-               var fixedSizeSymbol = new Esri.ArcGISRuntime.Symbology.SimpleMarkerSymbol
-               {
-                   Style = SimpleMarkerSymbolStyle.Circle,
-                   Color = System.Drawing.Color.Orange,
-                   // 修复1：根据系统DPI缩放反向计算，确保视觉上是30像素
-                   Size = 30,
-                   // 修复2：设置锚点居中，避免渲染偏移
-                   OffsetX = 0,
-                   OffsetY = 0,
-
-               };
-
-                var clusterRenderer = new Esri.ArcGISRuntime.Symbology.SimpleRenderer(fixedSizeSymbol);
-
-                // 2. 创建聚合对象，传入上面的固定样式渲染器
-                var clusterReduction = new Esri.ArcGISRuntime.Reduction.ClusteringFeatureReduction(clusterRenderer)
+                // 配置聚合
+                var fixedSizeSymbol = new Esri.ArcGISRuntime.Symbology.SimpleMarkerSymbol
                 {
+                    Style = SimpleMarkerSymbolStyle.Circle,
+                    Color = System.Drawing.Color.Orange,
+                    Size = 30,
+                    OffsetX = 0,
+                    OffsetY = 0,
                 };
 
-                // 3. 关键步骤：添加显示数量的标签
-                // 3.1 定义文字样式 (白色粗体，居中)
+                var clusterRenderer = new Esri.ArcGISRuntime.Symbology.SimpleRenderer(fixedSizeSymbol);
+                var clusterReduction = new Esri.ArcGISRuntime.Reduction.ClusteringFeatureReduction(clusterRenderer);
+
+                // 配置聚合标签
                 var countTextSymbol = new Esri.ArcGISRuntime.Symbology.TextSymbol
                 {
                     Color = System.Drawing.Color.Orange,
@@ -259,21 +279,12 @@ namespace SmartNanjingTravel.ViewModels
                     HaloWidth = 2,
                     HorizontalAlignment = Esri.ArcGISRuntime.Symbology.HorizontalAlignment.Center,
                 };
-
-                // 3.2 定义标签表达式，使用特殊字段 "[cluster_count]" 表示聚合数量 
                 var countLabelExpression = new Esri.ArcGISRuntime.Mapping.Labeling.SimpleLabelExpression("[cluster_count]");
-
                 var countLabelDef = new Esri.ArcGISRuntime.Mapping.LabelDefinition(countLabelExpression, countTextSymbol);
-
-
-                // 3.4 将标签定义添加到聚合对象中
                 clusterReduction.LabelDefinitions.Add(countLabelDef);
-
-                // 4. 将配置好的聚合对象赋值给图层
                 subLayer.FeatureReduction = clusterReduction;
 
-
-                // 2. 创建文字符号 (TextSymbol)
+                // 配置景点名称标签
                 var labelTextSymbol = new Esri.ArcGISRuntime.Symbology.TextSymbol
                 {
                     Color = System.Drawing.Color.Black,
@@ -284,20 +295,17 @@ namespace SmartNanjingTravel.ViewModels
                     HorizontalAlignment = Esri.ArcGISRuntime.Symbology.HorizontalAlignment.Center,
                     OffsetX = -10,
                 };
-
-                // 3. 创建标签表达式 (注意：SimpleLabelExpression 需要中间的 .Labeling)
                 var labelExpression = new Esri.ArcGISRuntime.Mapping.Labeling.SimpleLabelExpression("[Name]");
                 var labelDef = new Esri.ArcGISRuntime.Mapping.LabelDefinition(labelExpression, labelTextSymbol)
                 {
                     MinScale = 0
                 };
-
-                // 5. 添加并开启
-                subLayer.LabelDefinitions.Clear(); //以此防重复添加
+                subLayer.LabelDefinitions.Clear();
                 subLayer.LabelDefinitions.Add(labelDef);
                 subLayer.LabelsEnabled = true;
             }
-            // --- 5. 缩放逻辑 (和以前一样) ---
+
+            // --- 6. 缩放逻辑 ---
             if (validPoints.Count > 0)
             {
                 if (validPoints.Count == 1)
@@ -308,6 +316,99 @@ namespace SmartNanjingTravel.ViewModels
                     await mapView.SetViewpointGeometryAsync(multipoint.Extent, 50);
                 }
             }
+        }
+
+        // 新增方法：生成稳定的POI_ID
+        private int GenerateStablePoiId(string name, double longitude, double latitude)
+        {
+            // 使用景点名称和坐标生成一个稳定的哈希值
+            // 这样同一景点在不同查询中会有相同的POI_ID
+            string combinedString = $"{name}_{longitude:F6}_{latitude:F6}";
+
+            // 使用简单的哈希算法
+            unchecked
+            {
+                int hash = 17;
+                foreach (char c in combinedString)
+                {
+                    hash = hash * 31 + c;
+                }
+                return Math.Abs(hash);
+            }
+        }
+
+        // 新增方法：将POI数据保存到本地数据库
+        private void SavePoiDataToLocalDatabase(Dictionary<int, AddressInfo> poiIdMap)
+        {
+            try
+            {
+                using (var connection = new SqliteConnection($"Data Source={DatabaseHelper.DatabasePath}"))
+                {
+                    connection.Open();
+
+                    foreach (var kvp in poiIdMap)
+                    {
+                        var poiId = kvp.Key;
+                        var info = kvp.Value;
+
+                        // 检查是否已存在该POI
+                        using (var checkCommand = connection.CreateCommand())
+                        {
+                            checkCommand.CommandText = "SELECT COUNT(*) FROM POI_INFO WHERE POI_ID = @poiId";
+                            checkCommand.Parameters.AddWithValue("@poiId", poiId);
+                            var exists = Convert.ToInt32(checkCommand.ExecuteScalar()) > 0;
+
+                            if (!exists)
+                            {
+                                // 插入新的POI数据
+                                using (var insertCommand = connection.CreateCommand())
+                                {
+                                    insertCommand.CommandText = @"
+                                INSERT OR IGNORE INTO POI_INFO 
+                                (POI_ID, POI_NAME, CAT_ID, DISTRICT, ADDR, LAT, LNG, 
+                                 DESC, RATING, OPEN_TIME, CREATE_TIME) 
+                                VALUES (@poiId, @name, @catId, @district, @address, 
+                                        @latitude, @longitude, @desc, @rating, 
+                                        @openTime, @createTime)";
+
+                                    insertCommand.Parameters.AddWithValue("@poiId", poiId);
+                                    insertCommand.Parameters.AddWithValue("@name", info.Name ?? "未知景点");
+                                    insertCommand.Parameters.AddWithValue("@catId", GetCategoryId(info.Name)); // 根据名称确定分类
+                                    insertCommand.Parameters.AddWithValue("@district", info.Adname ?? "");
+                                    insertCommand.Parameters.AddWithValue("@address", info.Address ?? "");
+                                    insertCommand.Parameters.AddWithValue("@latitude", info.Latitude ?? "0");
+                                    insertCommand.Parameters.AddWithValue("@longitude", info.Longitude ?? "0");
+                                    insertCommand.Parameters.AddWithValue("@desc", info.Name ?? "");
+                                    insertCommand.Parameters.AddWithValue("@rating", info.Rating ?? "0");
+                                    insertCommand.Parameters.AddWithValue("@openTime", info.Opentime ?? "");
+                                    insertCommand.Parameters.AddWithValue("@createTime", DateTime.Now);
+
+                                    insertCommand.ExecuteNonQuery();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // 如果数据库保存失败，只是记录日志，不影响主要功能
+                Console.WriteLine($"保存POI数据到数据库失败: {ex.Message}");
+            }
+        }
+
+        // 辅助方法：根据景点名称确定分类ID
+        private int GetCategoryId(string poiName)
+        {
+            // 简单的分类逻辑，可以根据需要扩展
+            if (poiName.Contains("博物馆") || poiName.Contains("纪念馆"))
+                return 2; // 博物馆
+            else if (poiName.Contains("公园") || poiName.Contains("山") || poiName.Contains("湖"))
+                return 3; // 自然风光
+            else if (poiName.Contains("美食") || poiName.Contains("小吃"))
+                return 4; // 美食购物
+            else
+                return 1; // 默认历史遗迹
         }
 
         #region INotifyPropertyChanged

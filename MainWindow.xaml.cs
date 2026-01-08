@@ -1,9 +1,12 @@
-﻿using Esri.ArcGISRuntime.Data;
+﻿using System.Windows.Controls;
+using System.Windows.Controls.Primitives; // 添加这行
+using Esri.ArcGISRuntime.Data;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
 using Esri.ArcGISRuntime.Reduction;
 using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.UI.Controls;
+using SmartNanjingTravel.Data;
 using SmartNanjingTravel.ViewModels;
 using System.Collections.ObjectModel;
 using System.Text;
@@ -16,6 +19,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.IO;
+using Microsoft.Win32;
 
 namespace SmartNanjingTravel
 {
@@ -25,6 +30,8 @@ namespace SmartNanjingTravel
     public partial class MainWindow : Window
     {
         private AmapPoiViewModel _amapPoiViewModel;
+        private ObservableCollection<FavoriteItem> _favoriteItems = new ObservableCollection<FavoriteItem>();
+        private List<FavoriteItem> _allFavorites = new List<FavoriteItem>();
 
         public ObservableCollection<string> ViaPoints { get; set; } = new ObservableCollection<string>();
 
@@ -36,8 +43,14 @@ namespace SmartNanjingTravel
             ViaPointsItemsControl.ItemsSource = ViaPoints;
             _amapPoiViewModel = new AmapPoiViewModel();
             this.DataContext = _amapPoiViewModel;
+
+            // 设置收藏列表的数据源
+            FavoritesItemsControl.ItemsSource = _favoriteItems;
+
+            // 初始化时加载收藏数据
+            LoadFavoritesData();
         }
-        // 在 ViewpointChanged 事件中更新
+
         // 放大
         private async void ZoomIn_Click(object sender, RoutedEventArgs e)
         {
@@ -61,16 +74,15 @@ namespace SmartNanjingTravel
             await MyMapView.SetViewpointCenterAsync(nanjingCenter, 200000);
             await MyMapView.SetViewpointRotationAsync(0);
         }
+
         private void MyMapView_ViewpointChanged(object sender, EventArgs e)
         {
-            // --- 1. 更新指北针 ---
-            // 地图向右转（正），指北针图标应向左转（负），使其始终垂直向上
+            // 更新指北针
             CompassRotation.Angle = -MyMapView.MapRotation;
 
-            // --- 2. 更新图形比例尺 ---
+            // 更新图形比例尺
             UpdateGraphicScale();
         }
-
 
         // 1. 处理经纬度显示
         private void MyMapView_MouseMove(object sender, MouseEventArgs e)
@@ -86,19 +98,19 @@ namespace SmartNanjingTravel
                 CoordsTextBlock.Text = $"经度: {wgs84Point.X:F5}  纬度: {wgs84Point.Y:F5}";
             }
         }
+
         private void UpdateGraphicScale()
         {
             if (MyMapView.VisibleArea == null) return;
 
             // 获取地图当前 1 像素代表的实际距离（米）
-            // UnitsPerPixel 是当前缩放级别下，屏幕一个像素对应的地图单位（通常是米）
             double mPerPixel = MyMapView.UnitsPerPixel;
 
             // 目标：我们希望比例尺长度在屏幕上大概是 100 像素左右
             double targetLengthInPixels = 100;
             double actualDistance = targetLengthInPixels * mPerPixel;
 
-            // 对距离进行取整显示（例如 123米 -> 100米，或者是 1, 2, 5 进制）
+            // 对距离进行取整显示
             double roundedDistance = RoundToSignificant(actualDistance);
 
             // 重新计算对齐后的像素宽度
@@ -109,9 +121,8 @@ namespace SmartNanjingTravel
             ScaleBarPath.Data = System.Windows.Media.Geometry.Parse($"M 0,0 L 0,8 L {finalBarWidth},8 L {finalBarWidth},0");
             ScaleBarCanvas.Width = finalBarWidth;
         }
-        // 1. 放大功能：将当前比例尺缩小一半
 
-        // 辅助函数：让比例尺数字看起来更自然 (如 100, 200, 500)
+        // 辅助函数：让比例尺数字看起来更自然
         private double RoundToSignificant(double distance)
         {
             double factor = Math.Pow(10, Math.Floor(Math.Log10(distance)));
@@ -131,7 +142,7 @@ namespace SmartNanjingTravel
             // 点击指北针，地图恢复正北
             await MyMapView.SetViewpointRotationAsync(0);
         }
-        private GraphicsOverlay _scenicSpotsOverlay;
+
         private async void HomeButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -140,7 +151,7 @@ namespace SmartNanjingTravel
                 _amapPoiViewModel.InputAddress = "景点";
 
                 // 调用查询方法
-                await _amapPoiViewModel.QueryPoiAsync(MyMapView,30);
+                await _amapPoiViewModel.QueryPoiAsync(MyMapView, 30);
 
                 // 定位到南京区域
                 await MyMapView.SetViewpointAsync(new Viewpoint(
@@ -153,6 +164,7 @@ namespace SmartNanjingTravel
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+
         private async void MyMapView_GeoViewTapped(object sender, GeoViewInputEventArgs e)
         {
             try
@@ -169,8 +181,7 @@ namespace SmartNanjingTravel
 
                     if (subLayer != null)
                     {
-                        // 3. 【核心修改】精准识别这个子图层
-                        // 容差设为 15，returnPopupsOnly = false
+                        // 3. 精准识别这个子图层
                         var result = await MyMapView.IdentifyLayerAsync(subLayer, e.Position, 15, false);
 
                         if (result.GeoElements.Count > 0)
@@ -180,8 +191,6 @@ namespace SmartNanjingTravel
                             // 情况 A：点到了聚合圈圈 (AggregateGeoElement)
                             if (element is AggregateGeoElement)
                             {
-                                // 这就是那个蓝色的数字圈，不像 GraphicsOverlay，这个是点不开详情的
-                                // 我们直接返回，让用户去放大地图
                                 return;
                             }
 
@@ -200,11 +209,27 @@ namespace SmartNanjingTravel
                                 }
 
                                 string name = GetVal("Name", "名称");
-                                if (name == "暂无") name = "未知景点"; // 特殊处理名字
+                                if (name == "暂无") name = "未知景点";
 
                                 string rating = GetVal("Rating", "评分");
                                 string district = GetVal("Adname", "行政区");
                                 string openTime = GetVal("Opentime", "开门时间");
+                                string address = GetVal("Address", "地址");
+
+                                // 获取POI_ID
+                                string poiIdStr = GetVal("POI_ID", "POI_ID");
+                                int poiId = 0;
+                                if (!string.IsNullOrEmpty(poiIdStr) && int.TryParse(poiIdStr, out int parsedId))
+                                {
+                                    poiId = parsedId;
+                                }
+
+                                // 获取坐标
+                                string longitudeStr = GetVal("Longitude", "经度");
+                                string latitudeStr = GetVal("Latitude", "纬度");
+                                double longitude = 0, latitude = 0;
+                                double.TryParse(longitudeStr, out longitude);
+                                double.TryParse(latitudeStr, out latitude);
 
                                 // 图片处理
                                 string imageUrl = "";
@@ -216,20 +241,23 @@ namespace SmartNanjingTravel
                                 {
                                     imageUrl = attrs["图片"]?.ToString();
                                 }
+                                else if (attrs.ContainsKey("Photos"))
+                                {
+                                    imageUrl = attrs["Photos"]?.ToString();
+                                }
 
-                                // 弹窗
-                                var win = new ScenicInfoWindow(name, rating, district, openTime, imageUrl);
+                                // 传递更多参数给ScenicInfoWindow
+                                var win = new ScenicInfoWindow(name, rating, district, openTime, imageUrl,
+                                                               poiId, longitude, latitude);
                                 win.Owner = this;
                                 win.ShowDialog();
-                                return; // 找到了就结束
+                                return;
                             }
                         }
                     }
                 }
 
-                // ==========================================
-                // 4. (保底逻辑) 如果上面的聚合图层没找到，再去查旧的 GraphicsOverlay
-                // ==========================================
+                // 4. 如果上面的聚合图层没找到，再去查旧的 GraphicsOverlay
                 var overlay = MyMapView.GraphicsOverlays.FirstOrDefault(o => o.Id == "ScenicSpotsOverlay");
                 if (overlay != null)
                 {
@@ -259,6 +287,7 @@ namespace SmartNanjingTravel
                 // MessageBox.Show("点击报错：" + ex.Message);
             }
         }
+
         private void CloseRoutePlanningPanel_Click(object sender, RoutedEventArgs e)
         {
             RoutePlanningPanel.Visibility = Visibility.Collapsed;
@@ -267,7 +296,6 @@ namespace SmartNanjingTravel
         // 添加途径点按钮点击事件
         private void AddViaPointButton_Click(object sender, RoutedEventArgs e)
         {
-            // 向集合添加一个空字符串，会在UI中显示为空白输入框
             ViaPoints.Add("");
         }
 
@@ -282,11 +310,9 @@ namespace SmartNanjingTravel
         // 开始导航
         private void SearchRouteButton_Click(object sender, RoutedEventArgs e)
         {
-            // 这里实现路径规划逻辑
             string start = StartPointTextBox.Text;
             string destination = DestinationTextBox.Text;
 
-            // 可以获取所有途径点
             foreach (var viaPoint in ViaPoints)
             {
                 // 处理每个途径点
@@ -294,9 +320,8 @@ namespace SmartNanjingTravel
 
             MessageBox.Show("路径规划功能待实现");
         }
-        // MainWindow.xaml.cs 中的部分代码
-        // 删除单个途径点
 
+        // 删除单个途径点
         private void DeleteViaPointButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.DataContext is string viaPoint)
@@ -304,8 +329,6 @@ namespace SmartNanjingTravel
                 ViaPoints.Remove(viaPoint);
             }
         }
-        // 在我的收藏按钮点击事件中添加
-
 
         // 关闭收藏面板
         private void CloseFavoritesPanel_Click(object sender, RoutedEventArgs e)
@@ -316,31 +339,43 @@ namespace SmartNanjingTravel
         // 加载收藏数据
         private void LoadFavoritesData()
         {
-            // 这里可以加载实际的收藏数据
-            // 示例：更新收藏数量
-            UpdateFavoritesCount();
+            try
+            {
+                _allFavorites = DatabaseHelper.GetFavorites(App.CurrentUserId);
+                _favoriteItems.Clear();
 
-            // 如果没有收藏，显示空状态
-            ShowEmptyStateIfNeeded();
+                foreach (var item in _allFavorites)
+                {
+                    _favoriteItems.Add(item);
+                }
+
+                UpdateFavoritesCount();
+                ShowEmptyStateIfNeeded();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"加载收藏数据失败: {ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // 更新收藏数量
         private void UpdateFavoritesCount()
         {
-            if (FavoritesItemsControl.Items.Count == 0)
+            if (_favoriteItems.Count == 0)
             {
                 FavoritesCountText.Text = "暂无收藏";
             }
             else
             {
-                FavoritesCountText.Text = $"共 {FavoritesItemsControl.Items.Count} 个收藏";
+                FavoritesCountText.Text = $"共 {_favoriteItems.Count} 个收藏";
             }
         }
 
         // 显示空状态
         private void ShowEmptyStateIfNeeded()
         {
-            if (FavoritesItemsControl.Items.Count == 0)
+            if (_favoriteItems.Count == 0)
             {
                 EmptyStateBorder.Visibility = Visibility.Visible;
             }
@@ -353,52 +388,116 @@ namespace SmartNanjingTravel
         // 筛选按钮点击事件
         private void FilterButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is RadioButton radioButton)
+            if (sender is ToggleButton toggleButton)
             {
-                // RadioButton会自动处理选中状态，我们只需要根据选中状态进行筛选
-                string filterType = radioButton.Content.ToString();
+                // 重置所有按钮状态（除了当前点击的）
+                if (toggleButton == AllFilterButton)
+                {
+                    AttractionFilterButton.IsChecked = false;
+                    RouteFilterButton.IsChecked = false;
+                }
+                else if (toggleButton == AttractionFilterButton)
+                {
+                    AllFilterButton.IsChecked = false;
+                    RouteFilterButton.IsChecked = false;
+                }
+                else if (toggleButton == RouteFilterButton)
+                {
+                    AllFilterButton.IsChecked = false;
+                    AttractionFilterButton.IsChecked = false;
+                }
 
-                // 根据筛选条件过滤收藏列表
-                ApplyFilter(filterType);
+                ApplyFilter(toggleButton.Content.ToString());
             }
         }
 
         // 应用筛选
         private void ApplyFilter(string filterType)
         {
-            // 这里可以实现筛选逻辑
-            // 例如：if (filterType == "景点") { ... }
+            _favoriteItems.Clear();
+
+            if (filterType == "全部")
+            {
+                foreach (var item in _allFavorites)
+                {
+                    _favoriteItems.Add(item);
+                }
+            }
+            else if (filterType == "景点")
+            {
+                foreach (var item in _allFavorites.Where(f => f.Type == "景点"))
+                {
+                    _favoriteItems.Add(item);
+                }
+            }
+            else if (filterType == "路线")
+            {
+                // 这里可以筛选路线类型的收藏
+                foreach (var item in _allFavorites.Where(f => f.Type == "路线"))
+                {
+                    _favoriteItems.Add(item);
+                }
+            }
+
+            UpdateFavoritesCount();
+            ShowEmptyStateIfNeeded();
         }
 
         // 在地图上查看
         private void ViewOnMapButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag != null)
+            if (sender is Button button && button.Tag is FavoriteItem favorite)
             {
-                // 这里可以实现在地图上定位的功能
-                // 例如：var favoriteItem = button.Tag as FavoriteItem;
-                // NavigateToLocation(favoriteItem);
-                MessageBox.Show("在地图上查看功能待实现");
+                try
+                {
+                    // 定位到收藏的景点
+                    MapPoint location = new MapPoint((double)favorite.Longitude,
+                                                    (double)favorite.Latitude,
+                                                    SpatialReferences.Wgs84);
+
+                    MyMapView.SetViewpointCenterAsync(location, 10000);
+
+                    MessageBox.Show($"已定位到: {favorite.Name}", "提示",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"定位失败: {ex.Message}", "错误",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
         // 删除收藏
         private void DeleteFavoriteButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag != null)
+            if (sender is Button button && button.Tag is FavoriteItem favorite)
             {
-                var result = MessageBox.Show("确定要删除这个收藏吗？", "确认删除",
+                var result = MessageBox.Show($"确定要删除收藏的'{favorite.Name}'吗？", "确认删除",
                     MessageBoxButton.YesNo, MessageBoxImage.Question);
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    // 这里可以实现删除逻辑
-                    // 例如：RemoveFavorite(button.Tag as FavoriteItem);
-                    MessageBox.Show("删除收藏功能待实现");
+                    try
+                    {
+                        if (DatabaseHelper.RemoveFavorite(App.CurrentUserId, favorite.PoiId))
+                        {
+                            // 从本地集合中移除
+                            _allFavorites.RemoveAll(f => f.FavoriteId == favorite.FavoriteId);
+                            _favoriteItems.Remove(favorite);
 
-                    // 更新UI
-                    UpdateFavoritesCount();
-                    ShowEmptyStateIfNeeded();
+                            MessageBox.Show("删除成功", "提示",
+                                MessageBoxButton.OK, MessageBoxImage.Information);
+
+                            UpdateFavoritesCount();
+                            ShowEmptyStateIfNeeded();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"删除失败: {ex.Message}", "错误",
+                            MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
             }
         }
@@ -406,43 +505,100 @@ namespace SmartNanjingTravel
         // 清空所有收藏
         private void ClearAllFavoritesButton_Click(object sender, RoutedEventArgs e)
         {
-            var result = MessageBox.Show("确定要清空所有收藏吗？", "确认清空",
+            var result = MessageBox.Show("确定要清空所有收藏吗？此操作不可恢复！", "确认清空",
                 MessageBoxButton.YesNo, MessageBoxImage.Warning);
 
             if (result == MessageBoxResult.Yes)
             {
-                // 这里可以实现清空逻辑
-                // 例如：ClearAllFavorites();
-                MessageBox.Show("清空收藏功能待实现");
+                try
+                {
+                    if (DatabaseHelper.ClearAllFavorites(App.CurrentUserId))
+                    {
+                        _allFavorites.Clear();
+                        _favoriteItems.Clear();
 
-                // 更新UI
-                UpdateFavoritesCount();
-                ShowEmptyStateIfNeeded();
+                        MessageBox.Show("已清空所有收藏", "提示",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
+
+                        UpdateFavoritesCount();
+                        ShowEmptyStateIfNeeded();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"清空失败: {ex.Message}", "错误",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
-        // 导出收藏
+        // 导出收藏到CSV文件
         private void ExportFavoritesButton_Click(object sender, RoutedEventArgs e)
         {
-            // 这里可以实现导出功能
-            MessageBox.Show("导出收藏功能待实现");
+            try
+            {
+                if (_allFavorites.Count == 0)
+                {
+                    MessageBox.Show("没有收藏可以导出", "提示",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                SaveFileDialog saveFileDialog = new SaveFileDialog
+                {
+                    Filter = "CSV文件 (*.csv)|*.csv|所有文件 (*.*)|*.*",
+                    FileName = $"南京旅游收藏_{DateTime.Now:yyyyMMdd_HHmmss}.csv",
+                    DefaultExt = ".csv"
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    StringBuilder csvContent = new StringBuilder();
+
+                    // 添加标题行
+                    csvContent.AppendLine("收藏ID,景点名称,行政区,地址,经度,纬度,评分,价格,开放时间,分类,收藏时间,备注");
+
+                    // 添加数据行
+                    foreach (var item in _allFavorites)
+                    {
+                        csvContent.AppendLine($"\"{item.FavoriteId}\"," +
+                                            $"\"{item.Name}\"," +
+                                            $"\"{item.District}\"," +
+                                            $"\"{item.Address}\"," +
+                                            $"\"{item.Longitude}\"," +
+                                            $"\"{item.Latitude}\"," +
+                                            $"\"{item.Rating}\"," +
+                                            $"\"{item.Price}\"," +
+                                            $"\"{item.OpenTime}\"," +
+                                            $"\"{item.CategoryName}\"," +
+                                            $"\"{item.FavoriteTime:yyyy-MM-dd HH:mm:ss}\"," +
+                                            $"\"{item.Notes}\"");
+                    }
+
+                    File.WriteAllText(saveFileDialog.FileName, csvContent.ToString(), Encoding.UTF8);
+
+                    MessageBox.Show($"成功导出 {_allFavorites.Count} 个收藏到文件:\n{saveFileDialog.FileName}",
+                        "导出成功", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"导出失败: {ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
-        // 新增：显示/隐藏图层控制面板
 
-
-        // 新增：关闭图层控制面板
-        
-        // 统一管理所有侧边栏/浮动面板的显示与隐藏
+        // 新增 SwitchPanel 方法（修复 CS0103 错误）
         private void SwitchPanel(FrameworkElement panelToShow)
         {
             // 1. 列出所有需要互相排斥的面板
             var panels = new List<FrameworkElement>
-    {
-        RoutePlanningPanel,
-        FavoritesPanel,
-        LayerControlPanel,
-        RecommendationPanel// 如果图层面板也要互斥，就加在这里
-    };
+            {
+                RoutePlanningPanel,
+                FavoritesPanel,
+                LayerControlPanel,
+                RecommendationPanel
+            };
 
             // 2. 遍历处理：如果要显示的面板就是当前点击的，则显示；其他全部隐藏
             foreach (var panel in panels)
@@ -457,19 +613,22 @@ namespace SmartNanjingTravel
                 }
             }
         }
+
+        // 关闭图层控制面板
         private void CloseLayerControlPanel_Click(object sender, RoutedEventArgs e)
         {
             LayerControlPanel.Visibility = Visibility.Collapsed;
 
-            // 找到并清除景点叠加层的所有 Graphic（包括点和名称标签）
+            // 找到并清除景点叠加层的所有 Graphic
             var scenicOverlay = MyMapView.GraphicsOverlays
                 .FirstOrDefault(o => o.Id == "ScenicSpotsOverlay");
 
             if (scenicOverlay != null)
             {
-                scenicOverlay.Graphics.Clear();  // 这会移除所有景点点位和名称
+                scenicOverlay.Graphics.Clear();
             }
         }
+
         // 点击行程规划
         private void RoutePlanningButton_Click(object sender, RoutedEventArgs e)
         {
@@ -480,9 +639,10 @@ namespace SmartNanjingTravel
         private void MyFavoritesButton_Click(object sender, RoutedEventArgs e)
         {
             SwitchPanel(FavoritesPanel);
+            LoadFavoritesData(); // 每次打开都刷新数据
         }
 
-        // 点击图层控制（如果你希望打开图层时也关闭其他的）
+        // 点击图层控制
         private void LayerControlButton_Click(object sender, RoutedEventArgs e)
         {
             // 逻辑：如果已经显示，点击就关闭；如果没显示，点击就切换过去
@@ -495,17 +655,11 @@ namespace SmartNanjingTravel
                 SwitchPanel(LayerControlPanel);
             }
         }
-        // 在MainWindow.xaml.cs中添加以下方法
 
         // 游玩推荐按钮点击事件
         private void RecommendButton_Click(object sender, RoutedEventArgs e)
         {
-            // 先隐藏其他面板
-            RoutePlanningPanel.Visibility = Visibility.Collapsed;
-            FavoritesPanel.Visibility = Visibility.Collapsed;
-
-            // 显示游玩推荐面板
-            RecommendationPanel.Visibility = Visibility.Visible;
+            SwitchPanel(RecommendationPanel);
         }
 
         // 关闭游玩推荐面板
@@ -527,8 +681,6 @@ namespace SmartNanjingTravel
                 else if (button == RedMemoryButton) themeName = "红色记忆寻访";
                 else if (button == CityWallButton) themeName = "明城墙徒步";
 
-                // 这里可以调用数据库查询该主题的推荐路线
-                // 目前先显示提示信息
                 MessageBox.Show($"正在为您加载【{themeName}】主题路线...\n\n" +
                                "功能说明：\n" +
                                "1. 地图上将高亮显示相关景点位置\n" +
@@ -538,9 +690,6 @@ namespace SmartNanjingTravel
                                "主题路线推荐",
                                MessageBoxButton.OK,
                                MessageBoxImage.Information);
-
-                // TODO: 调用地图高亮显示相关景点和路线
-                // HighlightThemeOnMap(themeName);
             }
         }
 
@@ -557,8 +706,6 @@ namespace SmartNanjingTravel
                 else if (button == AutumnButton) seasonName = "秋游南京";
                 else if (button == WinterButton) seasonName = "冬游南京";
 
-                // 这里可以调用数据库查询该季节的推荐路线
-                // 目前先显示提示信息
                 MessageBox.Show($"正在为您加载【{seasonName}】季节路线...\n\n" +
                                "功能说明：\n" +
                                "1. 显示该季节最佳观赏景点\n" +
@@ -568,9 +715,6 @@ namespace SmartNanjingTravel
                                "季节路线推荐",
                                MessageBoxButton.OK,
                                MessageBoxImage.Information);
-
-                // TODO: 调用地图高亮显示季节推荐景点
-                // HighlightSeasonOnMap(seasonName);
             }
         }
 
@@ -584,6 +728,5 @@ namespace SmartNanjingTravel
                            MessageBoxButton.OK,
                            MessageBoxImage.Information);
         }
-        
     }
 }
