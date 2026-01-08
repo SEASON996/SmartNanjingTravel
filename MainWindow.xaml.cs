@@ -42,6 +42,29 @@ namespace SmartNanjingTravel
             MyMapView.ViewpointChanged += MyMapView_ViewpointChanged;
         }
         // 在 ViewpointChanged 事件中更新
+        // 放大
+        private async void ZoomIn_Click(object sender, RoutedEventArgs e)
+        {
+            await MyMapView.SetViewpointScaleAsync(MyMapView.MapScale * 0.5);
+        }
+
+        // 缩小
+        private async void ZoomOut_Click(object sender, RoutedEventArgs e)
+        {
+            await MyMapView.SetViewpointScaleAsync(MyMapView.MapScale * 2.0);
+        }
+
+        // 全览南京
+        private async void ViewNanjing_Click(object sender, RoutedEventArgs e)
+        {
+            // 南京中心点 (WGS84)
+            Esri.ArcGISRuntime.Geometry.MapPoint nanjingCenter =
+                new Esri.ArcGISRuntime.Geometry.MapPoint(118.796, 32.058, Esri.ArcGISRuntime.Geometry.SpatialReferences.Wgs84);
+
+            // 移动视角并重置正北
+            await MyMapView.SetViewpointCenterAsync(nanjingCenter, 200000);
+            await MyMapView.SetViewpointRotationAsync(0);
+        }
         private void MyMapView_ViewpointChanged(object sender, EventArgs e)
         {
             // --- 1. 更新指北针 ---
@@ -90,6 +113,7 @@ namespace SmartNanjingTravel
             ScaleBarPath.Data = System.Windows.Media.Geometry.Parse($"M 0,0 L 0,8 L {finalBarWidth},8 L {finalBarWidth},0");
             ScaleBarCanvas.Width = finalBarWidth;
         }
+        // 1. 放大功能：将当前比例尺缩小一半
 
         // 辅助函数：让比例尺数字看起来更自然 (如 100, 200, 500)
         private double RoundToSignificant(double distance)
