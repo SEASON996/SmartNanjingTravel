@@ -166,11 +166,13 @@ namespace SmartNanjingTravel.ViewModels
             var featureTable = new FeatureCollectionTable(fields, GeometryType.Point, SpatialReferences.Wgs84);
 
             Uri iconUri = new Uri("pack://application:,,,/SmartNanjingTravel;component/image/icons1.png");
-            var picSymbol = new Esri.ArcGISRuntime.Symbology.PictureMarkerSymbol(iconUri)
+
+            // 创建图片符号（仅用URI，无任何流/字节数组）
+            Esri.ArcGISRuntime.Symbology.PictureMarkerSymbol picSymbol = new Esri.ArcGISRuntime.Symbology.PictureMarkerSymbol(iconUri)
             {
                 Width = 20,
                 Height = 35,
-                OffsetY = 12
+                OffsetY = 12 // 图片中心对准点位
             };
             featureTable.Renderer = new Esri.ArcGISRuntime.Symbology.SimpleRenderer(picSymbol);
 
