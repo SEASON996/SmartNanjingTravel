@@ -66,9 +66,7 @@ namespace SmartNanjingTravel
         // 去这里按钮事件（预留函数）
         private void BtnGoHere_Click(object sender, RoutedEventArgs e)
         {
-            // 这里可以添加导航到该景点的功能
-            // 暂时只显示一个消息
-            MessageBox.Show("导航功能待实现", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            
         }
     }
 }
