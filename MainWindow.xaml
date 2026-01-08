@@ -473,9 +473,9 @@
                 
                 <!-- 我的收藏面板（默认折叠） -->
                 <Border x:Name="FavoritesPanel"
-                      Width="400"  HorizontalAlignment="Right" VerticalAlignment="Top"
-                      Margin="0,20,20,0" Background="#FFFFFFFF" CornerRadius="8" Padding="0"
-                      Visibility="Collapsed" BorderBrush="#FFE0E0E0" BorderThickness="1" Grid.Row="1">
+                        Width="400"  HorizontalAlignment="Left" VerticalAlignment="Top"
+                        Margin="20,20,20,0" Background="#FFFFFFFF" CornerRadius="8" Padding="0"
+                        Visibility="Collapsed" BorderBrush="#FFE0E0E0" BorderThickness="1" Grid.Row="1">
 
                     <Grid>
                         <Grid.RowDefinitions>
@@ -519,43 +519,10 @@
 
                         <!-- 收藏内容区 -->
                         <ScrollViewer Grid.Row="1" 
-                      VerticalScrollBarVisibility="Auto"
-                      Padding="15,15,15,0">
+                                      VerticalScrollBarVisibility="Auto"
+                                      Padding="15,15,15,0">
                             <StackPanel>
-                                <!-- 收藏分类筛选 -->
-                                <Border Style="{StaticResource RoutePointItem}" 
-                        Margin="0,0,0,15">
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-
-                                        <TextBlock Grid.Row="0" 
-                                   Text="筛选条件" 
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,0,10"/>
-
-                                        <WrapPanel Grid.Row="1" Orientation="Horizontal">
-                                            <ToggleButton x:Name="AllFilterButton"
-                                          Content="全部"
-                                          IsChecked="True"
-                                          Margin="0,0,10,5"
-                                          Padding="12,6"
-                                          Click="FilterButton_Click"/>
-                                            <ToggleButton x:Name="AttractionFilterButton"
-                                          Content="景点"
-                                          Margin="0,0,10,5"
-                                          Padding="12,6"
-                                          Click="FilterButton_Click"/>
-                                            <ToggleButton x:Name="RouteFilterButton"
-                                          Content="路线"
-                                          Margin="0,0,10,5"
-                                          Padding="12,6"
-                                          Click="FilterButton_Click"/>
-                                        </WrapPanel>
-                                    </Grid>
-                                </Border>
+                              
 
                                 <!-- 收藏项列表 -->
                                 <ItemsControl x:Name="FavoritesItemsControl">
@@ -587,30 +554,50 @@
                                                     <!-- 收藏项信息 -->
                                                     <StackPanel Grid.Column="1" Grid.Row="0">
                                                         <TextBlock Text="{Binding Name}" 
-                                                   FontSize="14" 
-                                                   FontWeight="SemiBold"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Margin="0,0,0,4"/>
-                                                        <TextBlock Text="{Binding Type}" 
-                                                   FontSize="11"
-                                                   Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
-                                                   Margin="0,0,0,2"/>
-                                                        <TextBlock Text="{Binding Description}" 
-                                                   FontSize="12"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Margin="0,0,0,2"/>
+                                                                   FontSize="14" 
+                                                                   FontWeight="SemiBold"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Margin="0,0,0,4"/>
+                                                        <WrapPanel Margin="0,0,0,4">
+                                                            <!-- 行政区 -->
+                                                            <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
+                                                                <materialDesign:PackIcon Kind="MapMarker" 
+                                                                                         Width="12" 
+                                                                                         Height="12"
+                                                                                         Margin="0,0,2,0"
+                                                                                         VerticalAlignment="Center"
+                                                                                         Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                                                <TextBlock Text="{Binding District}" 
+                                                                           FontSize="11"
+                                                                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                                            </StackPanel>
+
+                                                            <!-- 评分 -->
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <materialDesign:PackIcon Kind="Star" 
+                                                                                         Width="12" 
+                                                                                         Height="12"
+                                                                                         Margin="0,0,2,0"
+                                                                                         VerticalAlignment="Center"
+                                                                                         Foreground="#FF9800"/>
+                                                                <TextBlock Text="{Binding DisplayRating}" 
+                                                                           FontSize="11"
+                                                                           FontWeight="Medium"
+                                                                           Foreground="#FF9800"/>
+                                                            </StackPanel>
+                                                        </WrapPanel>
                                                     </StackPanel>
 
                                                     <!-- 操作按钮 -->
                                                     <StackPanel Grid.Column="2" 
-                                                Grid.Row="0"
-                                                Orientation="Horizontal"
-                                                VerticalAlignment="Top">
+                                                                Grid.Row="0"
+                                                                Orientation="Horizontal"
+                                                                VerticalAlignment="Top">
                                                         <Button Style="{StaticResource MaterialDesignIconButton}"
-                                                ToolTip="在地图上查看"
-                                                Click="ViewOnMapButton_Click"
-                                                Tag="{Binding}"
-                                                Margin="0,0,5,0">
+                                                                ToolTip="在地图上查看"
+                                                                Click="ViewOnMapButton_Click"
+                                                                Tag="{Binding}"
+                                                                Margin="0,0,5,0">
                                                             <materialDesign:PackIcon Kind="MapMarker" 
                                                                      Width="16" 
                                                                      Height="16"

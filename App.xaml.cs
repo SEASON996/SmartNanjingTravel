@@ -4,18 +4,20 @@ using System.Windows;
 using Esri.ArcGISRuntime;
 using Esri.ArcGISRuntime.Http;
 using Esri.ArcGISRuntime.Security;
-using SmartNanjingTravel.Data;
+using SmartNanjingTravel.Models;
+using SmartNanjingTravel.Services;
 
 namespace SmartNanjingTravel
 {
     public partial class App : Application
     {
         public static string CurrentUserId { get; set; } = "default_user"; // 默认用户ID
+        public static FavoriteService FavoriteService { get; private set; }
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            // 初始化数据库
-            DatabaseHelper.InitializeDatabase();
+            FavoriteService = new FavoriteService();
+            FavoriteService.InitializeDatabase();
 
             // 初始化ArcGIS Maps SDK
             try

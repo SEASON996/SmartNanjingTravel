@@ -2,7 +2,8 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
-using SmartNanjingTravel.Data;
+using SmartNanjingTravel.Models;
+using SmartNanjingTravel.Services;
 
 namespace SmartNanjingTravel
 {
@@ -92,7 +93,7 @@ namespace SmartNanjingTravel
 
                 if (_poiId > 0)
                 {
-                    _isFavorite = DatabaseHelper.IsFavorite(App.CurrentUserId, _poiId);
+                    _isFavorite = App.FavoriteService.IsFavorite(App.CurrentUserId, _poiId);
                     UpdateFavoriteIcon();
                 }
             }
@@ -136,7 +137,7 @@ namespace SmartNanjingTravel
                     if (_isFavorite)
                     {
                         // 取消收藏
-                        if (DatabaseHelper.RemoveFavorite(App.CurrentUserId, _poiId))
+                        if (App.FavoriteService.RemoveFavorite(App.CurrentUserId, _poiId))
                         {
                             _isFavorite = false;
                             MessageBox.Show("已取消收藏", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -144,8 +145,24 @@ namespace SmartNanjingTravel
                     }
                     else
                     {
-                        // 添加收藏
-                        if (DatabaseHelper.AddFavorite(App.CurrentUserId, _poiId, $"收藏于 {DateTime.Now:yyyy-MM-dd}"))
+                        // 添加收藏 - 传递完整的景点信息
+                        var favorite = new FavoriteItem
+                        {
+                            UserId = App.CurrentUserId,
+                            PoiId = _poiId,
+                            Name = _currentPoiName,
+                            District = TxtDistrict.Text.Replace("行政区：", ""),
+                            Address = "",
+                            Latitude = _latitude,
+                            Longitude = _longitude,
+                            Rating = TxtRating.Text.Replace("评分：", ""),
+                            OpenTime = TxtOpenTime.Text,
+                            Photos = ImgScenic.Source?.ToString() ?? "",
+                            Notes = $"收藏于 {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                            FavoriteTime = DateTime.Now
+                        };
+
+                        if (App.FavoriteService.AddFavorite(favorite))
                         {
                             _isFavorite = true;
                             MessageBox.Show("收藏成功！", "提示", MessageBoxButton.OK, MessageBoxImage.Information);

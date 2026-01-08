@@ -1,17 +1,14 @@
 ﻿using System.Windows.Controls;
-using System.Windows.Controls.Primitives; // 添加这行
+using System.Windows.Controls.Primitives;
 using Esri.ArcGISRuntime.Data;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
 using Esri.ArcGISRuntime.Reduction;
 using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.UI.Controls;
-using SmartNanjingTravel.Data;
-using SmartNanjingTravel.ViewModels;
 using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -21,6 +18,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
 using Microsoft.Win32;
+using SmartNanjingTravel.Models;
+using SmartNanjingTravel.ViewModels;
 
 namespace SmartNanjingTravel
 {
@@ -341,10 +340,11 @@ namespace SmartNanjingTravel
         {
             try
             {
-                _allFavorites = DatabaseHelper.GetFavorites(App.CurrentUserId);
+                var favorites = App.FavoriteService.GetFavorites(App.CurrentUserId);
+                _allFavorites = favorites;
                 _favoriteItems.Clear();
 
-                foreach (var item in _allFavorites)
+                foreach (var item in favorites)
                 {
                     _favoriteItems.Add(item);
                 }
@@ -385,7 +385,7 @@ namespace SmartNanjingTravel
             }
         }
 
-        // 筛选按钮点击事件
+/*        // 筛选按钮点击事件
         private void FilterButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is ToggleButton toggleButton)
@@ -409,10 +409,10 @@ namespace SmartNanjingTravel
 
                 ApplyFilter(toggleButton.Content.ToString());
             }
-        }
+        }*/
 
         // 应用筛选
-        private void ApplyFilter(string filterType)
+/*        private void ApplyFilter(string filterType)
         {
             _favoriteItems.Clear();
 
@@ -441,7 +441,7 @@ namespace SmartNanjingTravel
 
             UpdateFavoritesCount();
             ShowEmptyStateIfNeeded();
-        }
+        }*/
 
         // 在地图上查看
         private void ViewOnMapButton_Click(object sender, RoutedEventArgs e)
@@ -468,7 +468,8 @@ namespace SmartNanjingTravel
             }
         }
 
-        // 删除收藏
+
+
         private void DeleteFavoriteButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is FavoriteItem favorite)
@@ -480,7 +481,7 @@ namespace SmartNanjingTravel
                 {
                     try
                     {
-                        if (DatabaseHelper.RemoveFavorite(App.CurrentUserId, favorite.PoiId))
+                        if (App.FavoriteService.RemoveFavorite(App.CurrentUserId, favorite.PoiId))
                         {
                             // 从本地集合中移除
                             _allFavorites.RemoveAll(f => f.FavoriteId == favorite.FavoriteId);
@@ -502,7 +503,6 @@ namespace SmartNanjingTravel
             }
         }
 
-        // 清空所有收藏
         private void ClearAllFavoritesButton_Click(object sender, RoutedEventArgs e)
         {
             var result = MessageBox.Show("确定要清空所有收藏吗？此操作不可恢复！", "确认清空",
@@ -512,7 +512,7 @@ namespace SmartNanjingTravel
             {
                 try
                 {
-                    if (DatabaseHelper.ClearAllFavorites(App.CurrentUserId))
+                    if (App.FavoriteService.ClearAllFavorites(App.CurrentUserId))
                     {
                         _allFavorites.Clear();
                         _favoriteItems.Clear();
@@ -568,9 +568,7 @@ namespace SmartNanjingTravel
                                             $"\"{item.Longitude}\"," +
                                             $"\"{item.Latitude}\"," +
                                             $"\"{item.Rating}\"," +
-                                            $"\"{item.Price}\"," +
                                             $"\"{item.OpenTime}\"," +
-                                            $"\"{item.CategoryName}\"," +
                                             $"\"{item.FavoriteTime:yyyy-MM-dd HH:mm:ss}\"," +
                                             $"\"{item.Notes}\"");
                     }
