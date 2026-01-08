@@ -161,22 +161,30 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <!-- 搜索输入框 -->
                             <TextBox x:Name="SearchTextBox"
-                                     Grid.Column="0"
-                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                     materialDesign:HintAssist.Hint="搜索景点名称、类型或区域..."
-                                     FontSize="14"
-                                     Height="45"
-                                     VerticalContentAlignment="Center"
-                                     Margin="0,0,10,0"
-                                     Padding="15,0,10,0"
-                                     BorderThickness="0"/>
+         Text="{Binding InputAddress, UpdateSourceTrigger=PropertyChanged}" 
+         Grid.Column="0"
+         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+         materialDesign:HintAssist.Hint="搜索景点名称、类型或区域..."
+         FontSize="14"
+         Height="45"
+         VerticalContentAlignment="Center"
+         Margin="0,0,10,0"
+         Padding="15,0,10,0"
+         BorderThickness="0">
 
-                            <!-- 搜索按钮 -->
+                                <TextBox.InputBindings>
+                                    <KeyBinding Key="Enter" 
+                    Command="{Binding SearchCommand}" 
+                    CommandParameter="{Binding ElementName=MyMapView}"/>
+                                </TextBox.InputBindings>
+
+                            </TextBox>
                             <Button Grid.Column="1"
-                                    Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                    ToolTip="搜索">
+        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+        ToolTip="搜索"
+        Command="{Binding SearchCommand}"
+        CommandParameter="{Binding ElementName=MyMapView}">
                                 <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20"/>
                             </Button>
                         </Grid>

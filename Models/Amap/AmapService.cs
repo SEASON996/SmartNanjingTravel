@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using System.Net.Http;
+using System.Windows;
 
 namespace SmartNanjingTravel.Models.Amap
 {
@@ -25,7 +26,7 @@ namespace SmartNanjingTravel.Models.Amap
             if (string.IsNullOrEmpty(keywords))
                 throw new ArgumentException("查询关键词不能为空");
 
-            var requestUrl = $"{GeocodeApiUrl}?keywords={Uri.EscapeDataString(keywords)}&citylimit=true&city={city}&key={ApiKey}";
+            var requestUrl = $"{GeocodeApiUrl}?keywords={Uri.EscapeDataString(keywords)}&city={city}&key={ApiKey}";
 
             var response = await _httpClient.GetAsync(requestUrl);
             response.EnsureSuccessStatusCode();
@@ -34,8 +35,7 @@ namespace SmartNanjingTravel.Models.Amap
             var result = JsonConvert.DeserializeObject<PoiSearchResponse>(jsonResult);
 
             if (result.Status != "1" || result.Pois == null || result.Pois.Count == 0)
-                throw new Exception($"查询失败：{result.Info}（错误码：{result.InfoCode}）");
-
+                MessageBox.Show($"暂无此景点");
             return ConvertPoisToAddressInfo(result.Pois, keywords);
         }
 

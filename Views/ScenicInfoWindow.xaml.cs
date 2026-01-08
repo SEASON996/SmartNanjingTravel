@@ -1,6 +1,7 @@
-﻿using System.Windows;
+﻿using System.ComponentModel;
+using System.Windows;
 using System.Windows.Input;
-using System.ComponentModel;
+using System.Windows.Media.Imaging;
 
 namespace SmartNanjingTravel
 {
@@ -22,12 +23,31 @@ namespace SmartNanjingTravel
         }
 
         // 带参数的构造函数（业务调用）
-        public ScenicInfoWindow(string name, string rating, string district, string openTime) : this()
+        public ScenicInfoWindow(string name, string rating, string district, string openTime,string imageUrl) : this()
         {
             TxtName.Text = name ?? "未知景点";
             TxtRating.Text = $"评分：{rating ?? "暂无"}";
             TxtDistrict.Text = $"行政区：{district ?? "未知"}";
             TxtOpenTime.Text = openTime ?? "暂无营业时间信息";
+            // 【新增】加载图片逻辑
+            if (!string.IsNullOrEmpty(imageUrl))
+            {
+                try
+                {
+                    // 创建 BitmapImage 加载网络图片
+                    BitmapImage bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = new Uri(imageUrl, UriKind.Absolute);
+                    bitmap.EndInit(); // 触发加载
+                    ImgScenic.Source = bitmap;
+                    ImgScenic.Visibility = Visibility.Visible;
+                }
+                catch
+                {
+                    // 加载失败时隐藏图片或显示默认图
+                    ImgScenic.Visibility = Visibility.Collapsed;
+                }
+            }
         }
 
         // 窗口拖动事件

@@ -68,7 +68,7 @@
                 <Image
                     Grid.Row="1"
                     Height="160"
-                    Source="/SmartNanjingTravel;component/Image/Changsha.gif"
+x:Name="ImgScenic" 
                     Stretch="UniformToFill">
                     <Image.OpacityMask>
                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">

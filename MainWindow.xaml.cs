@@ -1,9 +1,10 @@
 ﻿using Esri.ArcGISRuntime.Data;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
+using Esri.ArcGISRuntime.Reduction;
 using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.UI.Controls;
-
+using SmartNanjingTravel.ViewModels;
 using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows;
@@ -15,7 +16,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using SmartNanjingTravel.ViewModels;
 
 namespace SmartNanjingTravel
 {
@@ -31,10 +31,12 @@ namespace SmartNanjingTravel
         public MainWindow()
         {
             InitializeComponent();
-            _amapPoiViewModel = new AmapPoiViewModel();
 
             // 设置ItemsControl的数据源
             ViaPointsItemsControl.ItemsSource = ViaPoints;
+            _amapPoiViewModel = new AmapPoiViewModel();
+            this.DataContext = _amapPoiViewModel;
+
         }
 
         private async void HomeButton_Click(object sender, RoutedEventArgs e)
@@ -45,7 +47,7 @@ namespace SmartNanjingTravel
                 _amapPoiViewModel.InputAddress = "景点";
 
                 // 调用查询方法
-                await _amapPoiViewModel.QueryPoiAsync(MyMapView);
+                await _amapPoiViewModel.QueryPoiAsync(MyMapView,30);
 
                 // 定位到南京区域
                 await MyMapView.SetViewpointAsync(new Viewpoint(
@@ -58,51 +60,112 @@ namespace SmartNanjingTravel
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        // 地图点击事件处理方法
         private async void MyMapView_GeoViewTapped(object sender, GeoViewInputEventArgs e)
         {
             try
             {
-                // 1. 查找ScenicSpotsOverlay叠加层
-                var scenicOverlay = MyMapView.GraphicsOverlays
-                    .FirstOrDefault(o => o.Id == "ScenicSpotsOverlay");
+                // 1. 先找外层的图层壳（聚合图层）
+                var collectionLayer = MyMapView.Map.OperationalLayers
+                                        .FirstOrDefault(l => l.Id == "ScenicSpotsLayer")
+                                        as Esri.ArcGISRuntime.Mapping.FeatureCollectionLayer;
 
-                // 如果没有景点叠加层或叠加层为空，直接返回
-                if (scenicOverlay == null || scenicOverlay.Graphics.Count == 0)
+                if (collectionLayer != null)
                 {
-                    return;
+                    // 2. 直接获取里面真正存点的子图层（一般就只有一层，取第0个）
+                    var subLayer = collectionLayer.Layers.FirstOrDefault();
+
+                    if (subLayer != null)
+                    {
+                        // 3. 【核心修改】精准识别这个子图层
+                        // 容差设为 15，returnPopupsOnly = false
+                        var result = await MyMapView.IdentifyLayerAsync(subLayer, e.Position, 15, false);
+
+                        if (result.GeoElements.Count > 0)
+                        {
+                            var element = result.GeoElements.First();
+
+                            // 情况 A：点到了聚合圈圈 (AggregateGeoElement)
+                            if (element is AggregateGeoElement)
+                            {
+                                // 这就是那个蓝色的数字圈，不像 GraphicsOverlay，这个是点不开详情的
+                                // 我们直接返回，让用户去放大地图
+                                return;
+                            }
+
+                            // 情况 B：点到了具体的景点 (Feature)
+                            if (element is Feature feature)
+                            {
+                                // 准备数据
+                                var attrs = feature.Attributes;
+
+                                // 辅助取值方法
+                                string GetVal(string k1, string k2 = null)
+                                {
+                                    if (attrs.ContainsKey(k1)) return attrs[k1]?.ToString();
+                                    if (k2 != null && attrs.ContainsKey(k2)) return attrs[k2]?.ToString();
+                                    return "暂无";
+                                }
+
+                                string name = GetVal("Name", "名称");
+                                if (name == "暂无") name = "未知景点"; // 特殊处理名字
+
+                                string rating = GetVal("Rating", "评分");
+                                string district = GetVal("Adname", "行政区");
+                                string openTime = GetVal("Opentime", "开门时间");
+
+                                // 图片处理
+                                string imageUrl = "";
+                                if (attrs.ContainsKey("ImageUrl"))
+                                {
+                                    imageUrl = attrs["ImageUrl"]?.ToString();
+                                }
+                                else if (attrs.ContainsKey("图片"))
+                                {
+                                    imageUrl = attrs["图片"]?.ToString();
+                                }
+
+                                // 弹窗
+                                var win = new ScenicInfoWindow(name, rating, district, openTime, imageUrl);
+                                win.Owner = this;
+                                win.ShowDialog();
+                                return; // 找到了就结束
+                            }
+                        }
+                    }
                 }
 
-                // 2. 获取点击位置的Graphic（景点点位）
-                IdentifyGraphicsOverlayResult result = await MyMapView.IdentifyGraphicsOverlayAsync(
-                    scenicOverlay,
-                    e.Position,
-                    10, // 点击容差（像素），避免点击偏差
-                    false);
+                // ==========================================
+                // 4. (保底逻辑) 如果上面的聚合图层没找到，再去查旧的 GraphicsOverlay
+                // ==========================================
+                var overlay = MyMapView.GraphicsOverlays.FirstOrDefault(o => o.Id == "ScenicSpotsOverlay");
+                if (overlay != null)
+                {
+                    var overlayResult = await MyMapView.IdentifyGraphicsOverlayAsync(overlay, e.Position, 10, false);
+                    if (overlayResult.Graphics.Count > 0)
+                    {
+                        var graphic = overlayResult.Graphics[0];
 
-                // 3. 没有点击到景点，直接返回
-                if (result.Graphics.Count == 0) return;
+                        // 旧逻辑简单处理
+                        string name = graphic.Attributes["名称"]?.ToString() ?? "未知";
+                        string rating = graphic.Attributes["评分"]?.ToString() ?? "暂无";
+                        string district = graphic.Attributes["行政区"]?.ToString() ?? "未知";
+                        string openTime = graphic.Attributes["开门时间"]?.ToString() ?? "暂无";
 
-                // 4. 获取点击的景点Graphic，提取信息
-                Graphic scenicGraphic = result.Graphics[0];
-                string name = scenicGraphic.Attributes["名称"]?.ToString() ?? "未知景点";
-                string rating = scenicGraphic.Attributes["评分"]?.ToString() ?? "暂无评分";
-                string district = scenicGraphic.Attributes["行政区"]?.ToString() ?? "未知行政区";
-                string openTime = scenicGraphic.Attributes["开门时间"]?.ToString() ?? "暂无营业时间";
+                        string imageUrl = "";
+                        if (graphic.Attributes.ContainsKey("图片")) imageUrl = graphic.Attributes["图片"]?.ToString();
 
-                // 5. 显示景点详情窗口
-                ScenicInfoWindow infoWindow = new ScenicInfoWindow(name, rating, district, openTime);
-                infoWindow.Owner = this;
-                infoWindow.ShowDialog();
+                        var win = new ScenicInfoWindow(name, rating, district, openTime, imageUrl);
+                        win.Owner = this;
+                        win.ShowDialog();
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"点击景点时出错：{ex.Message}");
+                // 调试时解开这行，看看是不是报了什么错
+                // MessageBox.Show("点击报错：" + ex.Message);
             }
         }
-
-
         private void CloseRoutePlanningPanel_Click(object sender, RoutedEventArgs e)
         {
             RoutePlanningPanel.Visibility = Visibility.Collapsed;
