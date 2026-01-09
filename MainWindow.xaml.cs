@@ -1,14 +1,20 @@
-﻿using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using Esri.ArcGISRuntime.Data;
+﻿using Esri.ArcGISRuntime.Data;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
 using Esri.ArcGISRuntime.Reduction;
+using Esri.ArcGISRuntime.Symbology;
 using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.UI.Controls;
+using Microsoft.Win32;
+using SmartNanjingTravel.Models;
+using SmartNanjingTravel.ViewModels;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Text;
+using System.Text.Json;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -16,11 +22,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.IO;
-using Microsoft.Win32;
-using SmartNanjingTravel.Models;
-using SmartNanjingTravel.ViewModels;
-
+using System.Net.Http;
+using System.Text.Json; // 推荐使用 System.Text.Json 或 Newtonsoft.Json
 namespace SmartNanjingTravel
 {
     /// <summary>
@@ -28,11 +31,18 @@ namespace SmartNanjingTravel
     /// </summary>
     public partial class MainWindow : Window
     {
+        private AmapRouteService _routeService = new AmapRouteService();
         private AmapPoiViewModel _amapPoiViewModel;
         private ObservableCollection<FavoriteItem> _favoriteItems = new ObservableCollection<FavoriteItem>();
         private List<FavoriteItem> _allFavorites = new List<FavoriteItem>();
+        public class ViaPointItem
+        {
+            public string Address { get; set; } = "";
 
-        public ObservableCollection<string> ViaPoints { get; set; } = new ObservableCollection<string>();
+            // 为了方便调试，您可以重写 ToString
+            public override string ToString() => Address;
+        }
+        public ObservableCollection<ViaPointItem> ViaPoints { get; set; } = new ObservableCollection<ViaPointItem>();
 
         public MainWindow()
         {
@@ -292,12 +302,23 @@ namespace SmartNanjingTravel
             RoutePlanningPanel.Visibility = Visibility.Collapsed;
         }
 
-        // 添加途径点按钮点击事件
+        // --- 修改添加按钮事件 ---
         private void AddViaPointButton_Click(object sender, RoutedEventArgs e)
         {
-            ViaPoints.Add("");
+            // 以前是: ViaPoints.Add("");
+            // 改为: 添加一个新的对象
+            ViaPoints.Add(new ViaPointItem { Address = "" });
         }
 
+        // --- 修改删除按钮事件 ---
+        private void DeleteViaPointButton_Click(object sender, RoutedEventArgs e)
+        {
+            // 修改类型判断：string -> ViaPointItem
+            if (sender is Button button && button.DataContext is ViaPointItem viaPoint)
+            {
+                ViaPoints.Remove(viaPoint);
+            }
+        }
         // 清空所有输入框
         private void ClearRouteButton_Click(object sender, RoutedEventArgs e)
         {
@@ -305,30 +326,91 @@ namespace SmartNanjingTravel
             DestinationTextBox.Text = "";
             ViaPoints.Clear();
         }
-
-        // 开始导航
-        private void SearchRouteButton_Click(object sender, RoutedEventArgs e)
+        private async void SearchRouteButton_Click(object sender, RoutedEventArgs e)
         {
+            // 1. 从界面获取输入
             string start = StartPointTextBox.Text;
             string destination = DestinationTextBox.Text;
 
+            // 获取途经点列表
+            List<string> midPoints = new List<string>();
             foreach (var viaPoint in ViaPoints)
             {
-                // 处理每个途径点
+                if (!string.IsNullOrWhiteSpace(viaPoint.Address)) // 注意：这里用到 ViaPointItem.Address
+                {
+                    midPoints.Add(viaPoint.Address);
+                }
             }
 
-            MessageBox.Show("路径规划功能待实现");
-        }
-
-        // 删除单个途径点
-        private void DeleteViaPointButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button && button.DataContext is string viaPoint)
+            if (string.IsNullOrEmpty(start) || string.IsNullOrEmpty(destination))
             {
-                ViaPoints.Remove(viaPoint);
+                MessageBox.Show("请输入起点和终点");
+                return;
+            }
+
+            // 2. 界面交互
+            SearchRouteButton.IsEnabled = false;
+            SearchRouteButton.Content = "规划中..."; // 提示一下
+
+            // 3. 调用服务
+            List<GeoPoint> routePoints = await _routeService.GetDrivingRoutePathAsync(start, destination, midPoints);
+
+            // 4. 处理结果
+            if (routePoints != null && routePoints.Count > 0)
+            {
+
+                ShowRouteOnMap(routePoints);
+                midPoints.Add(start);
+                midPoints.Add( destination);
+                await _amapPoiViewModel.QueryPoiAsync(MyMapView, 0, false , midPoints);
+
+            }
+            else
+            {
+                MessageBox.Show("未找到路径，请检查地址是否正确。");
+            }
+
+            SearchRouteButton.IsEnabled = true;
+            SearchRouteButton.Content = "开始导航"; // 恢复按钮文字
+        }
+        private void ShowRouteOnMap(List<GeoPoint> points)
+        {
+            // 1. 获取或创建用于显示路线的图层
+            var routeOverlay = MyMapView.GraphicsOverlays.FirstOrDefault(o => o.Id == "RouteOverlay");
+            if (routeOverlay == null)
+            {
+                routeOverlay = new GraphicsOverlay { Id = "RouteOverlay" };
+                MyMapView.GraphicsOverlays.Add(routeOverlay);
+            }
+
+            routeOverlay.Graphics.Clear();
+
+            // 2. 构建点集合 (使用全名 Esri.ArcGISRuntime.Geometry.PointCollection)
+            var stopPoints = new Esri.ArcGISRuntime.Geometry.PointCollection(SpatialReferences.Wgs84);
+
+            foreach (var p in points)
+            {
+                // 确保 MapPoint 也是 Esri 的
+                stopPoints.Add(new MapPoint(p.Longitude, p.Latitude));
+            }
+
+            // 3. 创建线几何体 (使用全名 Esri.ArcGISRuntime.Geometry.Polyline)
+            var routeLine = new Esri.ArcGISRuntime.Geometry.Polyline(stopPoints);
+
+            // 4. 定义线的样式
+            // 注意：如果有报错提示 Color，请确保引用了 System.Drawing，或者改成 Color.FromRgb(...)
+            var lineSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, System.Drawing.Color.FromArgb(103, 58, 183), 3);
+
+            // 5. 创建图形并显示
+            var routeGraphic = new Graphic(routeLine, lineSymbol);
+            routeOverlay.Graphics.Add(routeGraphic);
+
+            // 6. 自动缩放视角
+            if (routeLine.Parts.Count > 0 && routeLine.Parts[0].PointCount > 0)
+            {
+                MyMapView.SetViewpointGeometryAsync(routeLine.Extent, 50);
             }
         }
-
         // 关闭收藏面板
         private void CloseFavoritesPanel_Click(object sender, RoutedEventArgs e)
         {
@@ -715,7 +797,165 @@ namespace SmartNanjingTravel
                                MessageBoxImage.Information);
             }
         }
+        // 路径规划类
+        public class AmapRouteService
+        {
+            // 您的 Key
+            private const string ApiKey = "88eb4252bbd3f175d95e1fe5501da57c";
+            private readonly HttpClient _httpClient = new HttpClient();
 
+            public async Task<List<GeoPoint>> GetDrivingRoutePathAsync(string startAddr, string endAddr, List<string> viaAddrs)
+            {
+                try
+                {
+                    // 1. 查起点
+                    var startLoc = await GetLocationByAddressAsync(startAddr);
+                    if (startLoc == null) { MessageBox.Show($"无法识别起点：{startAddr}"); return new List<GeoPoint>(); }
+
+                    // 2. 查终点
+                    var endLoc = await GetLocationByAddressAsync(endAddr);
+                    if (endLoc == null) { MessageBox.Show($"无法识别终点：{endAddr}"); return new List<GeoPoint>(); }
+
+                    // 3. 查途经点 (循环处理)
+                    string waypointsStr = "";
+                    if (viaAddrs != null && viaAddrs.Count > 0)
+                    {
+                        var locList = new List<string>();
+                        foreach (var addr in viaAddrs)
+                        {
+                            if (string.IsNullOrWhiteSpace(addr)) continue;
+                            var p = await GetLocationByAddressAsync(addr);
+                            if (p != null)
+                            {
+                                locList.Add($"{p.Longitude:F6},{p.Latitude:F6}");
+                            }
+                        }
+                        // 高德要求用分号 ; 隔开
+                        waypointsStr = string.Join(";", locList);
+                    }
+
+                    // 4. 请求最终路径
+                    return await RequestDrivingRouteAsync(startLoc, endLoc, waypointsStr);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"出错: {ex.Message}");
+                    return new List<GeoPoint>();
+                }
+            }
+
+            // 地址解析 (保留之前的稳健逻辑)
+            private async Task<GeoPoint> GetLocationByAddressAsync(string keyword)
+            {
+                try
+                {
+                    // 注意 URL 变了：从 geocode/geo 变成了 place/text
+                    // 强制指定 city=南京，搜索更精准
+                    string url = $"https://restapi.amap.com/v3/place/text?keywords={keyword}&city=南京&output=JSON&key={ApiKey}";
+
+                    var json = await _httpClient.GetStringAsync(url);
+
+                    using (JsonDocument doc = JsonDocument.Parse(json))
+                    {
+                        var root = doc.RootElement;
+                        if (root.TryGetProperty("status", out var status) && status.GetString() == "1")
+                        {
+                            // 这里变了：检查 "pois" 数组，而不是 "geocodes"
+                            if (root.TryGetProperty("pois", out var pois) && pois.GetArrayLength() > 0)
+                            {
+                                var firstPoi = pois[0]; // 取第一个结果
+
+                                // 获取 location 字段
+                                if (firstPoi.TryGetProperty("location", out var locProp))
+                                {
+                                    // 格式依然是 "经度,纬度"
+                                    string locStr = locProp.GetString();
+                                    if (!string.IsNullOrEmpty(locStr)) // 有时候可能是空的数组，加个判断
+                                    {
+                                        var parts = locStr.Split(',');
+                                        if (parts.Length == 2)
+                                        {
+                                            double lon = double.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture);
+                                            double lat = double.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture);
+                                            return new GeoPoint(lon, lat);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+                return null;
+            }
+
+            // 路径规划 (增加 waypoints 参数)
+            private async Task<List<GeoPoint>> RequestDrivingRouteAsync(GeoPoint start, GeoPoint end, string waypoints)
+            {
+                var list = new List<GeoPoint>();
+                try
+                {
+                    string url = $"https://restapi.amap.com/v3/direction/driving?origin={start.Longitude:F6},{start.Latitude:F6}&destination={end.Longitude:F6},{end.Latitude:F6}&extensions=base&strategy=0&key={ApiKey}";
+
+                    // 如果有途经点，拼接到 URL 后面
+                    if (!string.IsNullOrEmpty(waypoints))
+                    {
+                        url += $"&waypoints={waypoints}";
+                    }
+
+                    var json = await _httpClient.GetStringAsync(url);
+
+                    using (JsonDocument doc = JsonDocument.Parse(json))
+                    {
+                        var root = doc.RootElement;
+                        if (root.TryGetProperty("status", out var status) && status.GetString() == "1")
+                        {
+                            if (root.TryGetProperty("route", out var route) && route.TryGetProperty("paths", out var paths))
+                            {
+                                if (paths.GetArrayLength() > 0)
+                                {
+                                    // 解析第一个方案的所有步骤
+                                    if (paths[0].TryGetProperty("steps", out var steps))
+                                    {
+                                        foreach (var step in steps.EnumerateArray())
+                                        {
+                                            if (step.TryGetProperty("polyline", out var polyline))
+                                            {
+                                                var pointArr = polyline.GetString().Split(';');
+                                                foreach (var p in pointArr)
+                                                {
+                                                    var xy = p.Split(',');
+                                                    if (xy.Length == 2)
+                                                    {
+                                                        list.Add(new GeoPoint(
+                                                            double.Parse(xy[0], System.Globalization.CultureInfo.InvariantCulture),
+                                                            double.Parse(xy[1], System.Globalization.CultureInfo.InvariantCulture)
+                                                        ));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"解析路径失败: {ex.Message}");
+                }
+                return list;
+            }
+        }
+
+        // 数据模型类
+        public class GeoPoint
+        {
+            public double Longitude { get; set; }
+            public double Latitude { get; set; }
+            public GeoPoint(double lon, double lat) { Longitude = lon; Latitude = lat; }
+        }
         // 查看所有推荐
         private void ViewAllRecommendations_Click(object sender, RoutedEventArgs e)
         {
