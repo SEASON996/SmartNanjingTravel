@@ -42,6 +42,10 @@ namespace SmartNanjingTravel
             // 为了方便调试，您可以重写 ToString
             public override string ToString() => Address;
         }
+        // 新增：追踪景点图层状态的字段
+        private bool _isScenicLayerVisible = false;
+        private FeatureCollectionLayer _scenicSpotsLayer = null;
+        private GraphicsOverlay _scenicSpotsOverlay = null;
         public ObservableCollection<ViaPointItem> ViaPoints { get; set; } = new ObservableCollection<ViaPointItem>();
 
 
@@ -156,6 +160,16 @@ namespace SmartNanjingTravel
         {
             try
             {
+                // 如果图层已经显示，则移除它
+                if (_isScenicLayerVisible)
+                {
+                    RemoveScenicLayer();
+                    HomeButtonText.Text = "景区总览"; // 更新按钮文本提示
+                    return;
+                }
+
+                _isScenicLayerVisible = true;
+                HomeButtonText.Text = "景区总览";
                 // 设置查询关键词为南京的主要景点类型
                 _amapPoiViewModel.InputAddress = "景点";
 
@@ -166,6 +180,13 @@ namespace SmartNanjingTravel
                 await MyMapView.SetViewpointAsync(new Viewpoint(
                     new MapPoint(118.8, 32.05, SpatialReferences.Wgs84),
                     50000));
+
+                // 更新状态
+                _isScenicLayerVisible = true;
+                HomeButtonText.Text = "景区总览"; // 更新按钮文本提示
+
+                // 存储图层引用以便后续移除
+                StoreLayerReferences();
             }
             catch (Exception ex)
             {
@@ -174,6 +195,46 @@ namespace SmartNanjingTravel
             }
         }
 
+        // 新增：存储图层引用
+        private void StoreLayerReferences()
+        {
+            // 存储聚合图层
+            _scenicSpotsLayer = MyMapView.Map.OperationalLayers
+                .FirstOrDefault(l => l.Id == "ScenicSpotsLayer") as FeatureCollectionLayer;
+
+            // 存储图形叠加层
+            _scenicSpotsOverlay = MyMapView.GraphicsOverlays
+                .FirstOrDefault(o => o.Id == "ScenicSpotsOverlay");
+        }
+
+        // 新增：移除景点图层
+        private void RemoveScenicLayer()
+        {
+            try
+            {
+                // 移除聚合图层
+                if (_scenicSpotsLayer != null)
+                {
+                    MyMapView.Map.OperationalLayers.Remove(_scenicSpotsLayer);
+                    _scenicSpotsLayer = null;
+                }
+
+                // 移除图形叠加层
+                if (_scenicSpotsOverlay != null)
+                {
+                    MyMapView.GraphicsOverlays.Remove(_scenicSpotsOverlay);
+                    _scenicSpotsOverlay = null;
+                }
+
+                // 更新状态
+                _isScenicLayerVisible = false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"移除图层失败：{ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
         private async void MyMapView_GeoViewTapped(object sender, GeoViewInputEventArgs e)
         {
             try
@@ -672,6 +733,20 @@ namespace SmartNanjingTravel
         // 新增 SwitchPanel 方法（修复 CS0103 错误）
         private void SwitchPanel(FrameworkElement panelToShow)
         {
+            // 如果显示其他面板，则隐藏景区图层
+            if (panelToShow != null &&
+                panelToShow != FavoritesPanel &&
+                panelToShow != RoutePlanningPanel &&
+                panelToShow != RecommendationPanel)
+            {
+                if (_isScenicLayerVisible)
+                {
+                    RemoveScenicLayer();
+                    if (HomeButtonText != null)
+                        HomeButtonText.Text = "景区总览";
+                }
+            }
+
             // 1. 列出所有需要互相排斥的面板
             var panels = new List<FrameworkElement>
             {

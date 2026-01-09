@@ -84,7 +84,7 @@
                         Click="HomeButton_Click">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Home" Width="20" Height="20" Margin="0,0,10,0"/>
-                        <TextBlock Text="景区总览"/>
+                        <TextBlock x:Name="HomeButtonText" Text="景区总览"/>
                     </StackPanel>
                 </Button>
 
