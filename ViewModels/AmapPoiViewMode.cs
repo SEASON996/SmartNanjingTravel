@@ -18,6 +18,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 namespace SmartNanjingTravel.ViewModels
 {
     public class AmapPoiViewModel : INotifyPropertyChanged
@@ -261,7 +262,7 @@ namespace SmartNanjingTravel.ViewModels
                 var fixedSizeSymbol = new Esri.ArcGISRuntime.Symbology.SimpleMarkerSymbol
                 {
                     Style = SimpleMarkerSymbolStyle.Circle,
-                    Color = System.Drawing.Color.FromArgb(255, 255, 128, 1),
+                    Color =   System.Drawing.Color.FromArgb(255,103,58,183),
                     Size = 30,
                     OffsetX = 0,
                     OffsetY = 0,
@@ -273,7 +274,7 @@ namespace SmartNanjingTravel.ViewModels
                 // 配置聚合标签
                 var countTextSymbol = new Esri.ArcGISRuntime.Symbology.TextSymbol
                 {
-                    Color = System.Drawing.Color.FromArgb(255, 255, 128, 1),
+                    Color = System.Drawing.Color.FromArgb(255, 103, 58, 183),
                     Size = 20,
                     FontWeight = Esri.ArcGISRuntime.Symbology.FontWeight.Bold,
                     HaloColor = System.Drawing.Color.White,

@@ -49,7 +49,6 @@ namespace SmartNanjingTravel
 
             // 初始化时加载收藏数据
             LoadFavoritesData();
-
         }
 
         // 放大
@@ -287,6 +286,7 @@ namespace SmartNanjingTravel
                 // MessageBox.Show("点击报错：" + ex.Message);
             }
         }
+
 
         private void CloseRoutePlanningPanel_Click(object sender, RoutedEventArgs e)
         {
