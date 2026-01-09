@@ -90,34 +90,54 @@ namespace SmartNanjingTravel.ViewModels
                 remove { CommandManager.RequerySuggested -= value; }
             }
         }
-        public async Task QueryPoiAsync(MapView mapView,int i)
+
+        public async Task QueryPoiAsync(MapView mapView,int i,Boolean isguihua = true, List<string> viaPointList = null)
         {
             if (mapView == null)
             {
                 MessageBox.Show("错误：地图控件未正确加载 (mapView is null)。\n请确保 XAML 中的 CommandParameter 绑定正确。", "绑定错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            if (string.IsNullOrEmpty(InputAddress))
+            if (isguihua)
             {
-                QueryResult = "请输入要查询的地址！";
-                MessageBox.Show("错误：未输入查询关键词", "提示",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                if (string.IsNullOrEmpty(InputAddress))
+                {
+                    QueryResult = "请输入要查询的地址！";
+                    MessageBox.Show("错误：未输入查询关键词", "提示",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
             }
+      
 
             try
             {
-                var results = await _amapService.QueryPoiAsync(InputAddress, "南京");
-
-                AddressInfoList.Clear();
-                var j = 0;
-                foreach (var item in results)
+                if (isguihua)
                 {
-                    j++;
-                    AddressInfoList.Add(item);
-                    if (i <= j) break;
-                    
+                    var results = await _amapService.QueryPoiAsync(InputAddress, "南京");
+                    AddressInfoList.Clear();
+                    var j = 0;
+                    foreach (var item in results)
+                    {
+                        j++;
+                        AddressInfoList.Add(item);
+                        if (i <= j) break;
+                    }
                 }
+                else
+                {
+                    AddressInfoList.Clear();
+                    foreach (var item in viaPointList) {
+                        var results = await _amapService.QueryPoiAsync(item, "南京");
+                        foreach (var gtti in results)
+                        {                     
+                            AddressInfoList.Add(gtti);
+                            break;
+                        }
+                    }                              
+                }
+              
+
                 await AddScenicSpotsToMap(mapView);
                 QueryResult = $"共加载{AddressInfoList.Count}条景点数据！";
             }
