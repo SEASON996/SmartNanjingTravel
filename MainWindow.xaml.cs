@@ -76,8 +76,7 @@ namespace SmartNanjingTravel
 
         private void MyMapView_ViewpointChanged(object sender, EventArgs e)
         {
-            // 更新指北针
-            CompassRotation.Angle = -MyMapView.MapRotation;
+
 
             // 更新图形比例尺
             UpdateGraphicScale();

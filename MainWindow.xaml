@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:esri="http://schemas.esri.com/arcgis/runtime/2013"
         xmlns:materialDesign="clr-namespace:MaterialDesignThemes.Wpf;assembly=MaterialDesignThemes.Wpf"
+        xmlns:esriToolkit="clr-namespace:Esri.ArcGISRuntime.Toolkit.UI.Controls;assembly=Esri.ArcGISRuntime.Toolkit"
         xmlns:local="clr-namespace:SmartNanjingTravel.ViewModels"
          mc:Ignorable="d"
         Title="MainWindow" Height="600" Width="1000"
@@ -206,35 +207,31 @@
                                 <Path Stroke="Black" StrokeThickness="2" Data="M 0,0 L 0,8 L 100,8 L 100,0" x:Name="ScaleBarPath"/>
                             </Canvas>
                         </StackPanel>
-
+                        <!--经纬度-->
                         <Border Background="#80000000" CornerRadius="4" Padding="8,4">
                             <TextBlock x:Name="CoordsTextBlock" Text="经度: --  纬度: --" Foreground="White" FontSize="11"/>
                         </Border>
                     </StackPanel>
-
-
+                    <!--指北针-->
                     <StackPanel Canvas.Right="20" Canvas.Top="20" Orientation="Vertical" HorizontalAlignment="Center">
-
-                        <Grid IsHitTestVisible="True" Cursor="Hand" MouseLeftButtonDown="Compass_Click" Margin="0,0,0,10">
-                            <Ellipse Width="50" Height="50" Fill="#CCFFFFFF" Stroke="Gray" StrokeThickness="1"/>
-                            <materialDesign:PackIcon Kind="Compass" Width="40" Height="40" 
-                                     Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
-                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                     RenderTransformOrigin="0.5,0.5">
-                                <materialDesign:PackIcon.RenderTransform>
-                                    <RotateTransform x:Name="CompassRotation" Angle="0"/>
-                                </materialDesign:PackIcon.RenderTransform>
-                            </materialDesign:PackIcon>
+                        <Grid Width="50" Height="50" Margin="0,0,0,10">
+                            <Ellipse Fill="{DynamicResource MaterialDesign.Brush.Primary}"
+                                    Stroke="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                                    StrokeThickness="1"
+                                    Opacity="1" />
+                            <esriToolkit:Compass GeoView="{Binding ElementName=MyMapView}" 
+                                             Width="50" Height="50"
+                                             Margin="0,0,0,0"
+                                             AutoHide="False" />
                         </Grid>
-
-                        
-                            <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}" 
+                        <!--放大-->
+                        <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}" 
                                     Width="40" Height="40" Margin="0,5"
                                     Background="#CCFFFFFF" BorderBrush="Gray"
                                     Click="ZoomIn_Click" ToolTip="放大">
                                 <materialDesign:PackIcon Kind="Plus" Foreground="Black"/>
                             </Button>
-
+                        <!--缩小-->
                             <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                     Width="40" Height="40" Margin="0,5"
                                     Background="#CCFFFFFF" BorderBrush="Gray"

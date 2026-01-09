@@ -23,6 +23,8 @@
 
   <ItemGroup>
 
+    <PackageReference Include="Esri.ArcGISRuntime.Toolkit" Version="100.15.0" />
+
     <PackageReference Include="Esri.ArcGISRuntime.WPF">
       <Version>200.8.0</Version>
     </PackageReference>
