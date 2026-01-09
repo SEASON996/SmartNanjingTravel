@@ -157,7 +157,7 @@
                              Padding="10"
                              UniformCornerRadius="8"
                              Margin="0,0,15,0">
-                        
+
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -193,7 +193,6 @@
                     </materialDesign:Card>
                 </Grid>
             </Border>
-
             <!-- 地图展示区 -->
             <Grid Grid.Row="1">
                 <esri:MapView Name="MyMapView" Map="{Binding Map, Source={StaticResource MapViewModel}, Mode=TwoWay}" 
@@ -229,26 +228,24 @@
                                     Width="40" Height="40" Margin="0,5"
                                     Background="#CCFFFFFF" BorderBrush="Gray"
                                     Click="ZoomIn_Click" ToolTip="放大">
-                                <materialDesign:PackIcon Kind="Plus" Foreground="Black"/>
-                            </Button>
+                            <materialDesign:PackIcon Kind="Plus" Foreground="Black"/>
+                        </Button>
                         <!--缩小-->
-                            <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                        <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                     Width="40" Height="40" Margin="0,5"
                                     Background="#CCFFFFFF" BorderBrush="Gray"
                                     Click="ZoomOut_Click" ToolTip="缩小">
-                                <materialDesign:PackIcon Kind="Minus" Foreground="Black"/>
-                            </Button>
+                            <materialDesign:PackIcon Kind="Minus" Foreground="Black"/>
+                        </Button>
 
-                            <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                        <Button Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
                                    Width="40" Height="40" Margin="0,5"
                                    Background="#CCFFFFFF" BorderBrush="Gray"
                                     Click="ViewNanjing_Click" ToolTip="全览南京">
-                                <materialDesign:PackIcon Kind="HomeCity" Foreground="Black"/>
-                            </Button>
-                        </StackPanel>
-
+                            <materialDesign:PackIcon Kind="HomeCity" Foreground="Black"/>
+                        </Button>
+                    </StackPanel>
                 </Canvas>
-                
                 <!-- 路线规划面板（默认折叠） -->
                 <Border x:Name="RoutePlanningPanel"
                          Width="400"
@@ -752,7 +749,7 @@
                             </Grid>
                         </Border>
 
-                        <!-- 游玩推荐内容（替换原来的 ScrollViewer 内容） -->
+                        <!-- 游玩推荐内容 -->
                         <ScrollViewer Grid.Row="1"
               VerticalScrollBarVisibility="Auto"
               Padding="15,20,15,20">
@@ -1133,7 +1130,6 @@
                         Click="LayerControlButton_Click">
                     <materialDesign:PackIcon Kind="Layers" Width="28" Height="28"/>
                 </Button>
-
             </Grid>
         </Grid>
     </Grid>
