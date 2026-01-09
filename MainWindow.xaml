@@ -196,7 +196,7 @@
             <!-- 地图展示区 -->
             <Grid Grid.Row="1">
                 <esri:MapView Name="MyMapView" Map="{Binding Map, Source={StaticResource MapViewModel}, Mode=TwoWay}" 
-                              GeoViewTapped="MyMapView_GeoViewTapped"/>
+                              GeoViewTapped="MyMapView_GeoViewTapped" MouseMove="MyMapView_MouseMove" ViewpointChanged="MyMapView_ViewpointChanged"/>
                 <Canvas IsHitTestVisible="True">
 
                     <StackPanel Canvas.Left="10" Canvas.Bottom="20" Orientation="Vertical">
