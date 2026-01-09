@@ -44,6 +44,7 @@ namespace SmartNanjingTravel
         }
         public ObservableCollection<ViaPointItem> ViaPoints { get; set; } = new ObservableCollection<ViaPointItem>();
 
+
         public MainWindow()
         {
             InitializeComponent();
@@ -86,8 +87,7 @@ namespace SmartNanjingTravel
 
         private void MyMapView_ViewpointChanged(object sender, EventArgs e)
         {
-            // 更新指北针
-            CompassRotation.Angle = -MyMapView.MapRotation;
+
 
             // 更新图形比例尺
             UpdateGraphicScale();
@@ -296,6 +296,7 @@ namespace SmartNanjingTravel
                 // MessageBox.Show("点击报错：" + ex.Message);
             }
         }
+
 
         private void CloseRoutePlanningPanel_Click(object sender, RoutedEventArgs e)
         {
