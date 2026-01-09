@@ -1,88 +1,203 @@
-﻿using Esri.ArcGISRuntime.Data;
-using Esri.ArcGISRuntime.Geometry;
+﻿// GeodatabaseService.cs
+using Esri.ArcGISRuntime.Data;
 using Esri.ArcGISRuntime.Mapping;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace SmartNanjingTravel.Services
 {
-    /// <summary>
-    /// 移动地理数据库服务 - 负责读取.gdb文件中的要素数据
-    /// </summary>
     public class GeodatabaseService
     {
+        private readonly string? _geodatabasePath;
+
+        public string? GeodatabasePath 
+        {
+            get => _geodatabasePath;
+        }
+
         private Geodatabase _geodatabase;
 
-        /// <summary>
-        /// 打开移动地理数据库
-        /// </summary>
-        public async Task<bool> OpenGeodatabaseAsync(string gdbPath)
+        public GeodatabaseService()
         {
+            // 获取当前程序集所在目录
+            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            string dataDirectory = Path.Combine(baseDirectory, "Data");
+
+            // 移动地理数据库文件路径
+            _geodatabasePath = System.IO.Path.Combine(dataDirectory, "Smart Traveling.geodatabase");
+        }
+
+        // 获取所有可用的路线名称
+
+        public async Task<List<string>> GetAvailableRouteNames(string gdbPath)
+        {
+            var routeNames = new List<string>();
+
             try
             {
-                _geodatabase = await Geodatabase.OpenAsync(gdbPath);
-                return _geodatabase != null;
-            }
-            catch (System.Exception ex)
-            {
-                MessageBox.Show($"打开地理数据库失败: {ex.Message}", "错误",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// 获取所有要素表（点、线、面）
-        /// </summary>
-        public IReadOnlyList<GeodatabaseFeatureTable> GetFeatureTables()
-        {
-            return _geodatabase?.GeodatabaseFeatureTables;
-        }
-
-        /// <summary>
-        /// 根据几何类型获取要素表
-        /// </summary>
-        public List<GeodatabaseFeatureTable> GetFeatureTablesByGeometryType(GeometryType geometryType)
-        {
-            var tables = new List<GeodatabaseFeatureTable>();
-
-            if (_geodatabase == null) return tables;
-
-            foreach (var table in _geodatabase.GeodatabaseFeatureTables)
-            {
-                if (table.GeometryType == geometryType)
+                if (!File.Exists(gdbPath))
                 {
-                    tables.Add(table);
+                    return routeNames;
+                }
+
+                _geodatabase = await Geodatabase.OpenAsync(gdbPath);
+
+                if (_geodatabase == null)
+                {
+                    return routeNames;
+                }
+
+                // 找出所有以_points结尾的表，提取路线名称
+                foreach (var table in _geodatabase.GeodatabaseFeatureTables)
+                {
+                    string tableName = table.TableName ?? "";
+                    if (tableName.EndsWith("_points", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string routeName = tableName.Substring(0, tableName.Length - "_points".Length);
+/*                        // 移除可能的"main."前缀
+                        if (routeName.StartsWith("main."))
+                            routeName = routeName.Substring(5);*/
+                        routeNames.Add(routeName);
+                    }
+                }
+
+                return routeNames.Distinct().ToList();
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine($"获取路线名称失败: {ex.Message}");
+                return routeNames;
+            }
+
+            finally
+            {
+                Close();
+            }
+        }
+
+        /// 加载指定路线的图层
+        /// 
+        public async Task<RouteLayers> LoadRouteLayers(string routeName, string gdbPath)
+        {
+            var result = new RouteLayers { RouteName = routeName };
+
+            try
+            {
+                if (!File.Exists(gdbPath))
+                {
+                    result.ErrorMessage = $"数据库文件不存在: {gdbPath}";
+                    return result;
+                }
+
+                _geodatabase = await Geodatabase.OpenAsync(gdbPath);
+
+                if (_geodatabase == null)
+                {
+                    result.ErrorMessage = "无法打开地理数据库";
+                    return result;
+                }
+
+                // 查找点图层（尝试多种命名方式）
+                string[] pointTableNames = {
+                    $"{routeName}_points",
+                    $"main.{routeName}_points",
+                    $"{routeName}_point",
+                    $"main.{routeName}_point"
+                };
+
+                // 查找线图层（尝试多种命名方式）
+                string[] lineTableNames = {
+                    $"{routeName}_lines",
+                    $"main.{routeName}_lines",
+                    $"{routeName}_line",
+                    $"main.{routeName}_line",
+                    $"{routeName}_route",
+                    $"main.{routeName}_route"
+                };
+
+                // 加载点图层
+                var pointTable = FindGeodatabaseTable(pointTableNames);
+                if (pointTable != null)
+                {
+                    result.PointLayer = new FeatureLayer(pointTable)
+                    {
+                        Name = $"{routeName} - 景点",
+                        IsVisible = true
+                    };
+                }
+
+                // 加载线图层
+                var lineTable = FindGeodatabaseTable(lineTableNames);
+                if (lineTable != null)
+                {
+                    result.RouteLayer = new FeatureLayer(lineTable)
+                    {
+                        Name = $"{routeName} - 路线",
+                        IsVisible = true
+                    };
+                }
+
+                result.IsLoaded = result.PointLayer != null || result.RouteLayer != null;
+
+                if (!result.IsLoaded)
+                {
+                    result.ErrorMessage = $"未找到路线'{routeName}'的图层";
                 }
             }
+            catch (Exception ex)
+            {
+                result.ErrorMessage = $"加载失败: {ex.Message}";
+            }
 
-            return tables;
+            return result;
         }
 
         /// <summary>
-        /// 根据名称获取要素表
+        /// 查找表
         /// </summary>
-        public GeodatabaseFeatureTable GetFeatureTableByName(string tableName)
+        private GeodatabaseFeatureTable FindGeodatabaseTable(string[] possibleNames)
         {
-            if (_geodatabase == null) return null;
-
-            foreach (var table in _geodatabase.GeodatabaseFeatureTables)
+            foreach (var name in possibleNames)
             {
-                if (table.TableName == tableName)
+                var table = _geodatabase.GeodatabaseFeatureTables
+                    .FirstOrDefault(t => t.TableName?.Equals(name, StringComparison.OrdinalIgnoreCase) == true);
+                if (table != null)
                     return table;
             }
-
             return null;
         }
 
         /// <summary>
-        /// 关闭地理数据库
+        /// 关闭数据库连接
         /// </summary>
         public void Close()
         {
             _geodatabase?.Close();
-            _geodatabase = null;
+        }
+    }
+
+    /// <summary>
+    /// 路线图层结果类
+    /// </summary>
+    public class RouteLayers
+    {
+        public string RouteName { get; set; }
+        public bool IsLoaded { get; set; }
+        public string ErrorMessage { get; set; }
+
+        public FeatureLayer PointLayer { get; set; }
+        public FeatureLayer RouteLayer { get; set; }
+
+        public List<Layer> GetAllLayers()
+        {
+            var layers = new List<Layer>();
+            if (PointLayer != null) layers.Add(PointLayer);
+            if (RouteLayer != null) layers.Add(RouteLayer);
+            return layers;
         }
     }
 }

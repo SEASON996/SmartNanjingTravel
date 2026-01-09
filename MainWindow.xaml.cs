@@ -31,8 +31,11 @@ namespace SmartNanjingTravel
         private AmapPoiViewModel _amapPoiViewModel;
         private ObservableCollection<FavoriteItem> _favoriteItems = new ObservableCollection<FavoriteItem>();
         private List<FavoriteItem> _allFavorites = new List<FavoriteItem>();
-
-
+        // 新增：追踪景点图层状态的字段
+        private bool _isScenicLayerVisible = false;
+        private FeatureCollectionLayer _scenicSpotsLayer = null;
+        private GraphicsOverlay _scenicSpotsOverlay = null;
+        private string _geodatabasePath;
         public ObservableCollection<string> ViaPoints { get; set; } = new ObservableCollection<string>();
 
         public MainWindow()
@@ -43,6 +46,7 @@ namespace SmartNanjingTravel
             ViaPointsItemsControl.ItemsSource = ViaPoints;
             _amapPoiViewModel = new AmapPoiViewModel();
             this.DataContext = _amapPoiViewModel;
+
 
             // 设置收藏列表的数据源
             FavoritesItemsControl.ItemsSource = _favoriteItems;
@@ -147,6 +151,15 @@ namespace SmartNanjingTravel
         {
             try
             {
+                // 如果图层已经显示，则移除它
+                if (_isScenicLayerVisible)
+                {
+                    RemoveScenicLayer();
+
+                    return;
+                }
+
+                _isScenicLayerVisible = true;
                 // 设置查询关键词为南京的主要景点类型
                 _amapPoiViewModel.InputAddress = "景点";
 
@@ -157,6 +170,13 @@ namespace SmartNanjingTravel
                 await MyMapView.SetViewpointAsync(new Viewpoint(
                     new MapPoint(118.8, 32.05, SpatialReferences.Wgs84),
                     50000));
+
+                // 更新状态
+                _isScenicLayerVisible = true;
+
+
+                // 存储图层引用以便后续移除
+                StoreLayerReferences();
             }
             catch (Exception ex)
             {
@@ -164,7 +184,46 @@ namespace SmartNanjingTravel
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        // 新增：存储图层引用
+        private void StoreLayerReferences()
+        {
+            // 存储聚合图层
+            _scenicSpotsLayer = MyMapView.Map.OperationalLayers
+                .FirstOrDefault(l => l.Id == "ScenicSpotsLayer") as FeatureCollectionLayer;
 
+            // 存储图形叠加层
+            _scenicSpotsOverlay = MyMapView.GraphicsOverlays
+                .FirstOrDefault(o => o.Id == "ScenicSpotsOverlay");
+        }
+
+        // 新增：移除景点图层
+        private void RemoveScenicLayer()
+        {
+            try
+            {
+                // 移除聚合图层
+                if (_scenicSpotsLayer != null)
+                {
+                    MyMapView.Map.OperationalLayers.Remove(_scenicSpotsLayer);
+                    _scenicSpotsLayer = null;
+                }
+
+                // 移除图形叠加层
+                if (_scenicSpotsOverlay != null)
+                {
+                    MyMapView.GraphicsOverlays.Remove(_scenicSpotsOverlay);
+                    _scenicSpotsOverlay = null;
+                }
+
+                // 更新状态
+                _isScenicLayerVisible = false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"移除图层失败：{ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
         private async void MyMapView_GeoViewTapped(object sender, GeoViewInputEventArgs e)
         {
             try
@@ -667,53 +726,140 @@ namespace SmartNanjingTravel
             RecommendationPanel.Visibility = Visibility.Collapsed;
         }
 
+
         // 主题按钮点击事件
-        private void ThemeButton_Click(object sender, RoutedEventArgs e)
+        private async void ThemeButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button)
             {
-                string themeName = "";
+                string routeName = "";
 
-                // 根据按钮名称确定主题
-                if (button == SixDynastiesButton) themeName = "六朝古都探秘";
-                else if (button == RepublicanButton) themeName = "民国风情之旅";
-                else if (button == RedMemoryButton) themeName = "红色记忆寻访";
-                else if (button == CityWallButton) themeName = "明城墙徒步";
+                // 根据按钮名称确定路线名称
+                if (button == SixDynastiesButton) routeName = "六朝古都";
+                else if (button == RepublicanButton) routeName = "民国风情之旅";
+                else if (button == RedMemoryButton) routeName = "红色记忆寻访";
+                else if (button == CityWallButton) routeName = "明城墙";
 
-                MessageBox.Show($"正在为您加载【{themeName}】主题路线...\n\n" +
-                               "功能说明：\n" +
-                               "1. 地图上将高亮显示相关景点位置\n" +
-                               "2. 显示推荐的游览路线\n" +
-                               "3. 提供详细的景点介绍\n\n" +
-                               "（数据库功能待完善）",
-                               "主题路线推荐",
-                               MessageBoxButton.OK,
-                               MessageBoxImage.Information);
+                if (string.IsNullOrEmpty(routeName))
+                    return;
+
+                try
+                {
+                    // 获取MapViewModel
+                    var mapViewModel = Resources["MapViewModel"] as MapViewModel;
+                    if (mapViewModel == null)
+                    {
+                        MessageBox.Show("地图视图模型未初始化", "错误");
+                        return;
+                    }
+
+                    // 显示加载提示
+                    var loadingDialog = new Window
+                    {
+                        Title = "正在加载",
+                        Width = 300,
+                        Height = 120,
+                        WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                        Owner = this,
+                        WindowStyle = WindowStyle.ToolWindow,
+                        ResizeMode = ResizeMode.NoResize,
+                        ShowInTaskbar = false
+                    };
+
+                    var stackPanel = new StackPanel
+                    {
+                        VerticalAlignment = VerticalAlignment.Center,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        Margin = new Thickness(20)
+                    };
+
+                    var progressBar = new ProgressBar
+                    {
+                        IsIndeterminate = true,
+                        Width = 200,
+                        Height = 20,
+                        Margin = new Thickness(0, 0, 0, 15)
+                    };
+
+                    var textBlock = new TextBlock
+                    {
+                        Text = $"正在加载【{routeName}】路线...",
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        TextWrapping = TextWrapping.Wrap,
+                        TextAlignment = TextAlignment.Center
+                    };
+
+                    stackPanel.Children.Add(progressBar);
+                    stackPanel.Children.Add(textBlock);
+                    loadingDialog.Content = stackPanel;
+                    loadingDialog.Show();
+
+                    // 调用MapViewModel的LoadRouteToMap方法
+                    bool success = await mapViewModel.LoadRouteToMap(routeName);
+
+                    loadingDialog.Close();
+
+                    if (success)
+                    {
+                        // 关闭推荐面板
+                        RecommendationPanel.Visibility = Visibility.Collapsed;
+
+                        MessageBox.Show($"成功加载【{routeName}】路线\n\n" +
+                                       "路线功能说明：\n" +
+                                       "1. 红色圆点表示景点位置\n" +
+                                       "2. 蓝色线条表示游览路线\n" +
+                                       "3. 点击景点可查看详细信息\n" +
+                                       "4. 可在图层控制面板中控制显示/隐藏",
+                                       "路线加载完成",
+                                       MessageBoxButton.OK,
+                                       MessageBoxImage.Information);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"加载路线异常: {ex.Message}", "错误",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
         // 季节按钮点击事件
-        private void SeasonButton_Click(object sender, RoutedEventArgs e)
+        private async void SeasonButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button)
             {
-                string seasonName = "";
+                string gdbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Smart Traveling.geodatabase");
 
-                // 根据按钮名称确定季节
-                if (button == SpringButton) seasonName = "春游南京";
-                else if (button == SummerButton) seasonName = "夏游南京";
-                else if (button == AutumnButton) seasonName = "秋游南京";
-                else if (button == WinterButton) seasonName = "冬游南京";
+                // 检查文件是否存在
+                if (!File.Exists(gdbPath))
+                {
+                    MessageBox.Show($"文件不存在：{gdbPath}", "错误");
+                    return;
+                }
+                await LoadRouteAsync("春");
+            }
+        }
+        private async Task LoadRouteAsync(string routeName)
+        {
+            try
+            {
+                // 获取MapViewModel
+                var mapViewModel = Resources["MapViewModel"] as MapViewModel;
+                if (mapViewModel == null)
+                {
+                    MessageBox.Show("地图视图模型未初始化", "错误");
+                    return;
+                }
 
-                MessageBox.Show($"正在为您加载【{seasonName}】季节路线...\n\n" +
-                               "功能说明：\n" +
-                               "1. 显示该季节最佳观赏景点\n" +
-                               "2. 推荐适合该季节的户外活动\n" +
-                               "3. 提供天气和穿着建议\n\n" +
-                               "（数据库功能待完善）",
-                               "季节路线推荐",
-                               MessageBoxButton.OK,
-                               MessageBoxImage.Information);
+                // 加载路线到地图
+                await mapViewModel.LoadRouteToMap(routeName);
+
+                // 关闭推荐面板
+                RecommendationPanel.Visibility = Visibility.Collapsed;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"加载路线失败: {ex.Message}", "错误");
             }
         }
 
