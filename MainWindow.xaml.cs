@@ -32,6 +32,7 @@ namespace SmartNanjingTravel
         private ObservableCollection<FavoriteItem> _favoriteItems = new ObservableCollection<FavoriteItem>();
         private List<FavoriteItem> _allFavorites = new List<FavoriteItem>();
 
+
         public ObservableCollection<string> ViaPoints { get; set; } = new ObservableCollection<string>();
 
         public MainWindow()
@@ -48,6 +49,7 @@ namespace SmartNanjingTravel
 
             // 初始化时加载收藏数据
             LoadFavoritesData();
+
         }
 
         // 放大
