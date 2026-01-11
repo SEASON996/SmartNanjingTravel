@@ -282,10 +282,11 @@ namespace SmartNanjingTravel.ViewModels
                 var fixedSizeSymbol = new Esri.ArcGISRuntime.Symbology.SimpleMarkerSymbol
                 {
                     Style = SimpleMarkerSymbolStyle.Circle,
-                    Color =   System.Drawing.Color.FromArgb(255,103,58,183),
-                    Size = 30,
+                    Color =   System.Drawing.Color.FromArgb(200, 255, 128, 1),
+                    Size = 32,
                     OffsetX = 0,
                     OffsetY = 0,
+
                 };
 
                 var clusterRenderer = new Esri.ArcGISRuntime.Symbology.SimpleRenderer(fixedSizeSymbol);
@@ -294,8 +295,8 @@ namespace SmartNanjingTravel.ViewModels
                 // 配置聚合标签
                 var countTextSymbol = new Esri.ArcGISRuntime.Symbology.TextSymbol
                 {
-                    Color = System.Drawing.Color.FromArgb(255, 103, 58, 183),
-                    Size = 20,
+                    Color = System.Drawing.Color.FromArgb(255, 255, 128, 1),
+                    Size = 22,
                     FontWeight = Esri.ArcGISRuntime.Symbology.FontWeight.Bold,
                     HaloColor = System.Drawing.Color.White,
                     HaloWidth = 2,
@@ -309,7 +310,7 @@ namespace SmartNanjingTravel.ViewModels
                 // 配置景点名称标签
                 var labelTextSymbol = new Esri.ArcGISRuntime.Symbology.TextSymbol
                 {
-                    Color = System.Drawing.Color.Black,
+                    Color = System.Drawing.Color.FromArgb(255, 103, 53, 183),
                     FontWeight = Esri.ArcGISRuntime.Symbology.FontWeight.Bold,
                     Size = 14,
                     HaloColor = System.Drawing.Color.White,

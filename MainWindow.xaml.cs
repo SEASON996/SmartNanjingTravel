@@ -23,7 +23,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Net.Http;
-using System.Text.Json; // 推荐使用 System.Text.Json 或 Newtonsoft.Json
 namespace SmartNanjingTravel
 {
     /// <summary>
@@ -35,6 +34,9 @@ namespace SmartNanjingTravel
         private AmapPoiViewModel _amapPoiViewModel;
         private ObservableCollection<FavoriteItem> _favoriteItems = new ObservableCollection<FavoriteItem>();
         private List<FavoriteItem> _allFavorites = new List<FavoriteItem>();
+        private bool _isScenicLayerVisible = false;
+        private FeatureCollectionLayer _scenicSpotsLayer = null;
+        private GraphicsOverlay _scenicSpotsOverlay = null;
         public class ViaPointItem
         {
             public string Address { get; set; } = "";
@@ -42,10 +44,7 @@ namespace SmartNanjingTravel
             // 为了方便调试，您可以重写 ToString
             public override string ToString() => Address;
         }
-        // 新增：追踪景点图层状态的字段
-        private bool _isScenicLayerVisible = false;
-        private FeatureCollectionLayer _scenicSpotsLayer = null;
-        private GraphicsOverlay _scenicSpotsOverlay = null;
+
         public ObservableCollection<ViaPointItem> ViaPoints { get; set; } = new ObservableCollection<ViaPointItem>();
         private string _geodatabasePath;
 
@@ -92,8 +91,6 @@ namespace SmartNanjingTravel
 
         private void MyMapView_ViewpointChanged(object sender, EventArgs e)
         {
-
-
             // 更新图形比例尺
             UpdateGraphicScale();
         }
@@ -107,9 +104,9 @@ namespace SmartNanjingTravel
 
             if (mapPoint != null)
             {
-                // 如果地图是 WebMercator，转成 WGS84 (经纬度)
+                // WebMercator转成WGS84
                 MapPoint wgs84Point = (MapPoint)GeometryEngine.Project(mapPoint, SpatialReferences.Wgs84);
-                CoordsTextBlock.Text = $"经度: {wgs84Point.X:F5}  纬度: {wgs84Point.Y:F5}";
+                CoordsTextBlock.Text = $"经度: {wgs84Point.X:F3}  纬度: {wgs84Point.Y:F3}";
             }
         }
 
@@ -119,12 +116,9 @@ namespace SmartNanjingTravel
 
             // 获取地图当前 1 像素代表的实际距离（米）
             double mPerPixel = MyMapView.UnitsPerPixel;
-
-            // 目标：我们希望比例尺长度在屏幕上大概是 100 像素左右
             double targetLengthInPixels = 100;
             double actualDistance = targetLengthInPixels * mPerPixel;
 
-            // 对距离进行取整显示
             double roundedDistance = RoundToSignificant(actualDistance);
 
             // 重新计算对齐后的像素宽度
@@ -157,6 +151,46 @@ namespace SmartNanjingTravel
             await MyMapView.SetViewpointRotationAsync(0);
         }
 
+
+        // 面板切换方法
+        private void SwitchPanel(FrameworkElement panelToShow)
+        {
+            // 如果显示其他面板，则隐藏景区图层
+            if (panelToShow != null &&
+                panelToShow != FavoritesPanel &&
+                panelToShow != RoutePlanningPanel &&
+                panelToShow != RecommendationPanel)
+            {
+                if (_isScenicLayerVisible)
+                {
+                    RemoveScenicLayer();
+                    if (HomeButtonText != null)
+                        HomeButtonText.Text = "景区总览";
+                }
+            }
+
+            var panels = new List<FrameworkElement>
+            {
+                RoutePlanningPanel,
+                FavoritesPanel,
+                LayerControlPanel,
+                RecommendationPanel
+            };
+
+            // 如果要显示的面板就是当前点击的，则显示；其他全部隐藏
+            foreach (var panel in panels)
+            {
+                if (panel == panelToShow)
+                {
+                    panel.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    panel.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
         private async void HomeButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -170,7 +204,7 @@ namespace SmartNanjingTravel
                 }
 
                 _isScenicLayerVisible = true;
-                HomeButtonText.Text = "景区总览";
+
                 // 设置查询关键词为南京的主要景点类型
                 _amapPoiViewModel.InputAddress = "景点";
 
@@ -208,7 +242,7 @@ namespace SmartNanjingTravel
                 .FirstOrDefault(o => o.Id == "ScenicSpotsOverlay");
         }
 
-        // 新增：移除景点图层
+        // 移除景点图层
         private void RemoveScenicLayer()
         {
             try
@@ -220,22 +254,6 @@ namespace SmartNanjingTravel
                     _scenicSpotsLayer = null;
                 }
 
-                // 移除图形叠加层
-                if (_scenicSpotsOverlay != null)
-                {
-                    MyMapView.GraphicsOverlays.Remove(_scenicSpotsOverlay);
-                    _scenicSpotsOverlay = null;
-                }
-
-                // 更新状态
-                _isScenicLayerVisible = false;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"移除图层失败：{ex.Message}", "错误",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
                 // 移除图形叠加层
                 if (_scenicSpotsOverlay != null)
                 {
@@ -546,64 +564,6 @@ namespace SmartNanjingTravel
             }
         }
 
-/*        // 筛选按钮点击事件
-        private void FilterButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is ToggleButton toggleButton)
-            {
-                // 重置所有按钮状态（除了当前点击的）
-                if (toggleButton == AllFilterButton)
-                {
-                    AttractionFilterButton.IsChecked = false;
-                    RouteFilterButton.IsChecked = false;
-                }
-                else if (toggleButton == AttractionFilterButton)
-                {
-                    AllFilterButton.IsChecked = false;
-                    RouteFilterButton.IsChecked = false;
-                }
-                else if (toggleButton == RouteFilterButton)
-                {
-                    AllFilterButton.IsChecked = false;
-                    AttractionFilterButton.IsChecked = false;
-                }
-
-                ApplyFilter(toggleButton.Content.ToString());
-            }
-        }*/
-
-        // 应用筛选
-/*        private void ApplyFilter(string filterType)
-        {
-            _favoriteItems.Clear();
-
-            if (filterType == "全部")
-            {
-                foreach (var item in _allFavorites)
-                {
-                    _favoriteItems.Add(item);
-                }
-            }
-            else if (filterType == "景点")
-            {
-                foreach (var item in _allFavorites.Where(f => f.Type == "景点"))
-                {
-                    _favoriteItems.Add(item);
-                }
-            }
-            else if (filterType == "路线")
-            {
-                // 这里可以筛选路线类型的收藏
-                foreach (var item in _allFavorites.Where(f => f.Type == "路线"))
-                {
-                    _favoriteItems.Add(item);
-                }
-            }
-
-            UpdateFavoritesCount();
-            ShowEmptyStateIfNeeded();
-        }*/
-
         // 在地图上查看
         private void ViewOnMapButton_Click(object sender, RoutedEventArgs e)
         {
@@ -747,46 +707,6 @@ namespace SmartNanjingTravel
             }
         }
 
-        // 新增 SwitchPanel 方法（修复 CS0103 错误）
-        private void SwitchPanel(FrameworkElement panelToShow)
-        {
-            // 如果显示其他面板，则隐藏景区图层
-            if (panelToShow != null &&
-                panelToShow != FavoritesPanel &&
-                panelToShow != RoutePlanningPanel &&
-                panelToShow != RecommendationPanel)
-            {
-                if (_isScenicLayerVisible)
-                {
-                    RemoveScenicLayer();
-                    if (HomeButtonText != null)
-                        HomeButtonText.Text = "景区总览";
-                }
-            }
-
-            // 1. 列出所有需要互相排斥的面板
-            var panels = new List<FrameworkElement>
-            {
-                RoutePlanningPanel,
-                FavoritesPanel,
-                LayerControlPanel,
-                RecommendationPanel
-            };
-
-            // 2. 遍历处理：如果要显示的面板就是当前点击的，则显示；其他全部隐藏
-            foreach (var panel in panels)
-            {
-                if (panel == panelToShow)
-                {
-                    panel.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    panel.Visibility = Visibility.Collapsed;
-                }
-            }
-        }
-
         // 关闭图层控制面板
         private void CloseLayerControlPanel_Click(object sender, RoutedEventArgs e)
         {
@@ -839,6 +759,8 @@ namespace SmartNanjingTravel
         private void CloseRecommendationPanel_Click(object sender, RoutedEventArgs e)
         {
             RecommendationPanel.Visibility = Visibility.Collapsed;
+            var mapViewModel = Resources["MapViewModel"] as MapViewModel;
+            mapViewModel?.ClearRouteLayers();
         }
 
 
@@ -851,9 +773,10 @@ namespace SmartNanjingTravel
 
                 // 根据按钮名称确定路线名称
                 if (button == SixDynastiesButton) routeName = "六朝古都";
-                else if (button == RepublicanButton) routeName = "民国风情之旅";
+                else if (button == RepublicanButton) routeName = "民国风情";
                 else if (button == RedMemoryButton) routeName = "红色记忆寻访";
                 else if (button == CityWallButton) routeName = "明城墙";
+                else if (button == GeologyDiscoveryButton) routeName = "地质";
 
                 if (string.IsNullOrEmpty(routeName))
                     return;
@@ -883,8 +806,8 @@ namespace SmartNanjingTravel
 
                     var stackPanel = new StackPanel
                     {
-                        VerticalAlignment = VerticalAlignment.Center,
-                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
                         Margin = new Thickness(20)
                     };
 
@@ -899,7 +822,7 @@ namespace SmartNanjingTravel
                     var textBlock = new TextBlock
                     {
                         Text = $"正在加载【{routeName}】路线...",
-                        HorizontalAlignment = HorizontalAlignment.Center,
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
                         TextWrapping = TextWrapping.Wrap,
                         TextAlignment = TextAlignment.Center
                     };
@@ -914,21 +837,6 @@ namespace SmartNanjingTravel
 
                     loadingDialog.Close();
 
-                    if (success)
-                    {
-                        // 关闭推荐面板
-                        RecommendationPanel.Visibility = Visibility.Collapsed;
-
-                        MessageBox.Show($"成功加载【{routeName}】路线\n\n" +
-                                       "路线功能说明：\n" +
-                                       "1. 红色圆点表示景点位置\n" +
-                                       "2. 蓝色线条表示游览路线\n" +
-                                       "3. 点击景点可查看详细信息\n" +
-                                       "4. 可在图层控制面板中控制显示/隐藏",
-                                       "路线加载完成",
-                                       MessageBoxButton.OK,
-                                       MessageBoxImage.Information);
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -943,40 +851,79 @@ namespace SmartNanjingTravel
         {
             if (sender is Button button)
             {
-                string gdbPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "Smart Traveling.geodatabase");
+                string routeName = "";
+                
+                // 根据按钮名称确定主题
+                if (button == SpringButton) routeName = "春";
+                else if (button == SummerButton) routeName = "夏";
+                else if (button == AutumnButton) routeName = "秋";
+                else if (button == WinterButton) routeName = "冬";
 
-                // 检查文件是否存在
-                if (!File.Exists(gdbPath))
+                try
                 {
-                    MessageBox.Show($"文件不存在：{gdbPath}", "错误");
-                    return;
+                    // 获取MapViewModel
+                    var mapViewModel = Resources["MapViewModel"] as MapViewModel;
+                    if (mapViewModel == null)
+                    {
+                        MessageBox.Show("地图视图模型未初始化", "错误");
+                        return;
+                    }
+
+                    // 显示加载提示
+                    var loadingDialog = new Window
+                    {
+                        Title = "正在加载",
+                        Width = 300,
+                        Height = 120,
+                        WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                        Owner = this,
+                        WindowStyle = WindowStyle.ToolWindow,
+                        ResizeMode = ResizeMode.NoResize,
+                        ShowInTaskbar = false
+                    };
+
+                    var stackPanel = new StackPanel
+                    {
+                        VerticalAlignment = System.Windows.VerticalAlignment.Center,
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                        Margin = new Thickness(20)
+                    };
+
+                    var progressBar = new ProgressBar
+                    {
+                        IsIndeterminate = true,
+                        Width = 200,
+                        Height = 20,
+                        Margin = new Thickness(0, 0, 0, 15)
+                    };
+
+                    var textBlock = new TextBlock
+                    {
+                        Text = $"正在加载【{routeName}】路线...",
+                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
+                        TextWrapping = TextWrapping.Wrap,
+                        TextAlignment = TextAlignment.Center
+                    };
+
+                    stackPanel.Children.Add(progressBar);
+                    stackPanel.Children.Add(textBlock);
+                    loadingDialog.Content = stackPanel;
+                    loadingDialog.Show();
+
+                    // 调用MapViewModel的LoadRouteToMap方法
+                    bool success = await mapViewModel.LoadRouteToMap(routeName);
+
+                    loadingDialog.Close();
+
                 }
-                await LoadRouteAsync("春");
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"加载路线异常: {ex.Message}", "错误",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
-        private async Task LoadRouteAsync(string routeName)
-        {
-            try
-            {
-                // 获取MapViewModel
-                var mapViewModel = Resources["MapViewModel"] as MapViewModel;
-                if (mapViewModel == null)
-                {
-                    MessageBox.Show("地图视图模型未初始化", "错误");
-                    return;
-                }
 
-                // 加载路线到地图
-                await mapViewModel.LoadRouteToMap(routeName);
-
-                // 关闭推荐面板
-                RecommendationPanel.Visibility = Visibility.Collapsed;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"加载路线失败: {ex.Message}", "错误");
-            }
-        }
         // 路径规划类
         public class AmapRouteService
         {

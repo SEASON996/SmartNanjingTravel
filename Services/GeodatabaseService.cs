@@ -32,7 +32,7 @@ namespace SmartNanjingTravel.Services
 
         // 获取所有可用的路线名称
 
-        public async Task<List<string>> GetAvailableRouteNames(string gdbPath)
+/*        public async Task<List<string>> GetAvailableRouteNames(string gdbPath)
         {
             var routeNames = new List<string>();
 
@@ -57,17 +57,17 @@ namespace SmartNanjingTravel.Services
                     if (tableName.EndsWith("_points", StringComparison.OrdinalIgnoreCase))
                     {
                         string routeName = tableName.Substring(0, tableName.Length - "_points".Length);
-/*                        // 移除可能的"main."前缀
+*//*                        // 移除可能的"main."前缀
                         if (routeName.StartsWith("main."))
-                            routeName = routeName.Substring(5);*/
+                            routeName = routeName.Substring(5);*//*
                         routeNames.Add(routeName);
                     }
                 }
 
                 return routeNames.Distinct().ToList();
-            }
+            }*/
 
-            catch (Exception ex)
+/*            catch (Exception ex)
             {
                 Console.WriteLine($"获取路线名称失败: {ex.Message}");
                 return routeNames;
@@ -77,23 +77,21 @@ namespace SmartNanjingTravel.Services
             {
                 Close();
             }
-        }
+        }*/
 
-        /// 加载指定路线的图层
-        /// 
-        public async Task<RouteLayers> LoadRouteLayers(string routeName, string gdbPath)
+        public async Task<RouteLayers> LoadRouteLayers(string routeName)
         {
             var result = new RouteLayers { RouteName = routeName };
 
             try
             {
-                if (!File.Exists(gdbPath))
+                if (!File.Exists(_geodatabasePath))
                 {
-                    result.ErrorMessage = $"数据库文件不存在: {gdbPath}";
+                    result.ErrorMessage = $"数据库文件不存在: {_geodatabasePath}";
                     return result;
                 }
 
-                _geodatabase = await Geodatabase.OpenAsync(gdbPath);
+               _geodatabase = await Geodatabase.OpenAsync(_geodatabasePath);
 
                 if (_geodatabase == null)
                 {
@@ -101,26 +99,9 @@ namespace SmartNanjingTravel.Services
                     return result;
                 }
 
-                // 查找点图层（尝试多种命名方式）
-                string[] pointTableNames = {
-                    $"{routeName}_points",
-                    $"main.{routeName}_points",
-                    $"{routeName}_point",
-                    $"main.{routeName}_point"
-                };
-
-                // 查找线图层（尝试多种命名方式）
-                string[] lineTableNames = {
-                    $"{routeName}_lines",
-                    $"main.{routeName}_lines",
-                    $"{routeName}_line",
-                    $"main.{routeName}_line",
-                    $"{routeName}_route",
-                    $"main.{routeName}_route"
-                };
-
                 // 加载点图层
-                var pointTable = FindGeodatabaseTable(pointTableNames);
+                string pointTableName = $"{routeName}_points";
+                var pointTable = FindGeodatabaseTable(pointTableName);
                 if (pointTable != null)
                 {
                     result.PointLayer = new FeatureLayer(pointTable)
@@ -131,7 +112,8 @@ namespace SmartNanjingTravel.Services
                 }
 
                 // 加载线图层
-                var lineTable = FindGeodatabaseTable(lineTableNames);
+                string lineTableName = $"{routeName}_line";
+                var lineTable = FindGeodatabaseTable(lineTableName);
                 if (lineTable != null)
                 {
                     result.RouteLayer = new FeatureLayer(lineTable)
@@ -159,24 +141,10 @@ namespace SmartNanjingTravel.Services
         /// <summary>
         /// 查找表
         /// </summary>
-        private GeodatabaseFeatureTable FindGeodatabaseTable(string[] possibleNames)
+        private GeodatabaseFeatureTable FindGeodatabaseTable(string tableName)
         {
-            foreach (var name in possibleNames)
-            {
-                var table = _geodatabase.GeodatabaseFeatureTables
-                    .FirstOrDefault(t => t.TableName?.Equals(name, StringComparison.OrdinalIgnoreCase) == true);
-                if (table != null)
-                    return table;
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// 关闭数据库连接
-        /// </summary>
-        public void Close()
-        {
-            _geodatabase?.Close();
+            return _geodatabase.GeodatabaseFeatureTables
+                .FirstOrDefault(t => t.TableName?.Equals(tableName, StringComparison.OrdinalIgnoreCase) == true);
         }
     }
 

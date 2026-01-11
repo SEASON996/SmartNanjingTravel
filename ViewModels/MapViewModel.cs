@@ -161,7 +161,6 @@ namespace SmartNanjingTravel.ViewModels
                 newBasemap.BaseLayers.Add(satelliteLabel);
             }
 
-            // 3. 【最关键的一步】将新底图赋值给当前的 Map 对象
             if (_map != null)
             {
                 _map.Basemap = newBasemap;
@@ -180,20 +179,8 @@ namespace SmartNanjingTravel.ViewModels
             {
                 // 清除现有的路线图层
                 ClearRouteLayers();
-
-                // 从App配置获取数据库路径
-                string gdbPath = App.GeodatabasePath;
-                if (string.IsNullOrEmpty(gdbPath) || !System.IO.File.Exists(gdbPath))
-                {
-                    MessageBox.Show($"数据库文件不存在: {gdbPath}", "错误");
-                    return false;
-                }
-
                 // 加载路线图层
-                var routeLayers = await _geodatabaseService.LoadRouteLayers(routeName, gdbPath);
-
-
-
+                var routeLayers = await _geodatabaseService.LoadRouteLayers(routeName);
                 if (!routeLayers.IsLoaded)
                 {
                     MessageBox.Show($"加载路线失败: {routeLayers.ErrorMessage}", "错误");
@@ -244,32 +231,30 @@ namespace SmartNanjingTravel.ViewModels
         {
             try
             {
-                // 为点图层创建红色圆形符号
+                // 为点图层创建符号
                 if (routeLayers.PointLayer != null)
                 {
-                    var pointSymbol = new SimpleMarkerSymbol()
+                    Uri iconUri = new Uri("pack://application:,,,/SmartNanjingTravel;component/image/icons1.png");
+
+                    // 创建图片符号
+                    Esri.ArcGISRuntime.Symbology.PictureMarkerSymbol picSymbol = new Esri.ArcGISRuntime.Symbology.PictureMarkerSymbol(iconUri)
                     {
-                        Style = SimpleMarkerSymbolStyle.Circle,
-                        Color = System.Drawing.Color.Red,
-                        Size = 12,
-                        Outline = new SimpleLineSymbol()
-                        {
-                            Color = System.Drawing.Color.White,
-                            Width = 2
-                        }
+                        Width = 20,
+                        Height = 35,
+                        OffsetY = 12
                     };
 
-                    routeLayers.PointLayer.Renderer = new SimpleRenderer(pointSymbol);
+                    routeLayers.PointLayer.Renderer = new SimpleRenderer(picSymbol);
                 }
 
-                // 为线图层创建蓝色线符号
+                // 为线图层创建符号
                 if (routeLayers.RouteLayer != null)
                 {
                     var lineSymbol = new SimpleLineSymbol()
                     {
                         Style = SimpleLineSymbolStyle.Solid,
-                        Color = System.Drawing.Color.Blue,
-                        Width = 3
+                        Color = System.Drawing.Color.FromArgb(255, 103, 58, 183), 
+                        Width = 6
                     };
 
                     routeLayers.RouteLayer.Renderer = new SimpleRenderer(lineSymbol);
@@ -312,27 +297,7 @@ namespace SmartNanjingTravel.ViewModels
             }
         }
 
-        /// 获取可用的路线列表
-        public async Task<List<string>> GetAvailableRoutes()
-        {
-            try
-            {
-                string gdbPath = _geodatabaseService.GeodatabasePath;
-                if (string.IsNullOrEmpty(gdbPath) || !System.IO.File.Exists(gdbPath))
-                {
-                    MessageBox.Show($"数据库文件不存在: {gdbPath}", "错误");
-                    return new List<string>();
-                }
-                return await _geodatabaseService.GetAvailableRouteNames(gdbPath);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"获取路线列表失败: {ex.Message}", "错误");
-                return new List<string>();
-            }
-        }
-
-        /// 创建点渲染器
+/*        /// 创建点渲染器
         private SimpleRenderer CreatePointRenderer()
         {
             var pointSymbol = new SimpleMarkerSymbol()
@@ -363,7 +328,7 @@ namespace SmartNanjingTravel.ViewModels
             };
 
             return new SimpleRenderer(lineSymbol);
-        }
+        }*/
 
 
         #region INotifyPropertyChanged
