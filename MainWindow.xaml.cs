@@ -274,6 +274,8 @@ namespace SmartNanjingTravel
         {
             try
             {
+                bool handled = await HandleGeodatabasePointClick(e);
+                if (handled) return;
                 // 1. 先找外层的图层壳（聚合图层）
                 var collectionLayer = MyMapView.Map.OperationalLayers
                                         .FirstOrDefault(l => l.Id == "ScenicSpotsLayer")
@@ -388,11 +390,114 @@ namespace SmartNanjingTravel
             }
             catch (Exception ex)
             {
-                // 调试时解开这行，看看是不是报了什么错
-                // MessageBox.Show("点击报错：" + ex.Message);
+                Console.WriteLine($"点击处理异常: {ex.Message}");
             }
         }
+        private async Task<bool> HandleGeodatabasePointClick(GeoViewInputEventArgs e)
+        {
+            try
+            {
+                // 查找所有可能的地理数据库点图层（名称包含"景点"的图层）
+                var geodatabaseLayers = MyMapView.Map.OperationalLayers
+                    .Where(l => l is FeatureLayer &&
+                           l.Name != null &&
+                           l.Name.Contains("景点"))
+                    .Cast<FeatureLayer>()
+                    .ToList();
 
+                foreach (var layer in geodatabaseLayers)
+                {
+                    var result = await MyMapView.IdentifyLayerAsync(layer, e.Position, 15, false);
+
+                    if (result.GeoElements.Count > 0)
+                    {
+                        var element = result.GeoElements.First();
+                        if (element is Feature feature)
+                        {
+                            // 获取属性
+                            var attrs = feature.Attributes;
+
+                            // 辅助方法获取字段值
+                            string GetAttributeValue(string key, string alternativeKey = null)
+                            {
+                                if (attrs.ContainsKey(key))
+                                    return attrs[key]?.ToString();
+                                if (alternativeKey != null && attrs.ContainsKey(alternativeKey))
+                                    return attrs[alternativeKey]?.ToString();
+                                return "暂无";
+                            }
+
+                            // 获取景点信息
+                            string name = GetAttributeValue("景区名称", "Name");
+                            string district = GetAttributeValue("所属区县", "District");
+
+                            // 生成一个临时的POI_ID（基于名称和位置）
+                            string poiIdStr = GetAttributeValue("POI_ID", "ID");
+                            int poiId = 0;
+                            if (!string.IsNullOrEmpty(poiIdStr) && int.TryParse(poiIdStr, out int parsedId))
+                            {
+                                poiId = parsedId;
+                            }
+                            else
+                            {
+                                // 如果没有POI_ID，生成一个临时的
+                                var geometry = feature.Geometry as MapPoint;
+                                if (geometry != null)
+                                {
+                                    poiId = GenerateTempPoiId(name, geometry.X, geometry.Y);
+                                }
+                            }
+
+                            // 获取坐标
+                            double longitude = 0, latitude = 0;
+                            if (feature.Geometry is MapPoint point)
+                            {
+                                var wgs84Point = (MapPoint)GeometryEngine.Project(point, SpatialReferences.Wgs84);
+                                longitude = wgs84Point.X;
+                                latitude = wgs84Point.Y;
+                            }
+
+                            // 打开ScenicInfoWindow
+                            var win = new ScenicInfoWindow(
+                                name: name,
+                                rating: "暂无", // 地理数据库没有评分信息
+                                district: district,
+                                openTime: "暂无开放时间", // 地理数据库没有开放时间
+                                imageUrl: "", // 地理数据库没有图片
+                                poiId: poiId,
+                                longitude: longitude,
+                                latitude: latitude
+                            );
+                            win.Owner = this;
+                            win.ShowDialog();
+
+                            return true; // 已处理
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"处理地理数据库点击失败: {ex.Message}");
+            }
+
+            return false;
+        }
+
+        // 生成临时POI_ID
+        private int GenerateTempPoiId(string name, double longitude, double latitude)
+        {
+            string combinedString = $"{name}_{longitude:F6}_{latitude:F6}";
+            unchecked
+            {
+                int hash = 17;
+                foreach (char c in combinedString)
+                {
+                    hash = hash * 31 + c;
+                }
+                return Math.Abs(hash);
+            }
+        }
 
         private void CloseRoutePlanningPanel_Click(object sender, RoutedEventArgs e)
         {

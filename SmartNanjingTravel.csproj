@@ -11,13 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Data\Smart Traveling.geodatabase" />
     <None Remove="Image\icons1.png" />
     <None Remove="Travel.db" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Data\Smart Traveling.geodatabase">
+    <Content Include="Data\Travel.geodatabase">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Data\Travel.db">

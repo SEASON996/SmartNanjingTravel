@@ -1,7 +1,9 @@
 ﻿// MapViewModel.cs
+using Esri.ArcGISRuntime.ArcGISServices;
 using Esri.ArcGISRuntime.Data;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
+using Esri.ArcGISRuntime.Mapping.Labeling;
 using Esri.ArcGISRuntime.Symbology;
 using Esri.ArcGISRuntime.UI.Controls;
 using SmartNanjingTravel.Models;
@@ -66,7 +68,7 @@ namespace SmartNanjingTravel.ViewModels
             "https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={col}&y={row}&z={level}",
             new System.Collections.Generic.List<string> { "1", "2", "3", "4", "5" })
             {
-                Attribution = "Map data ©2015 AutoNavi - GS(2015)2080号",
+/*                Attribution = "Map data ©2015 AutoNavi - GS(2015)2080号",*/
                 Name = "标准地图",
                 IsVisible = true
             };
@@ -245,6 +247,8 @@ namespace SmartNanjingTravel.ViewModels
                     };
 
                     routeLayers.PointLayer.Renderer = new SimpleRenderer(picSymbol);
+                    SetGeodatabaseLabels(routeLayers.PointLayer);
+
                 }
 
                 // 为线图层创建符号
@@ -265,7 +269,40 @@ namespace SmartNanjingTravel.ViewModels
                 Console.WriteLine($"符号设置失败: {ex.Message}");
             }
         }
+        private void SetGeodatabaseLabels(FeatureLayer pointLayer)
+        {
+            try
+            {
+                // 配置景点名称标签
+                var labelTextSymbol = new TextSymbol
+                {
+                    Color = System.Drawing.Color.FromArgb(255, 103, 53, 183),
+                    FontWeight = Esri.ArcGISRuntime.Symbology.FontWeight.Bold,
+                    Size = 14,
+                    HaloColor = System.Drawing.Color.White,
+                    HaloWidth = 2,
+                    OffsetY = 12,
+                    HorizontalAlignment = Esri.ArcGISRuntime.Symbology.HorizontalAlignment.Center,
+                    OffsetX = -10,
+                };
 
+                // 使用图层中的"景点名称"字段作为标签
+                var labelExpression = new SimpleLabelExpression("[景区名称]");
+                var labelDef = new LabelDefinition(labelExpression, labelTextSymbol)
+                {
+                    MinScale = 0,
+                    Placement = LabelingPlacement.PointAboveRight
+                };
+
+                pointLayer.LabelDefinitions.Clear();
+                pointLayer.LabelDefinitions.Add(labelDef);
+                pointLayer.LabelsEnabled = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"添加地理数据库标注失败: {ex.Message}");
+            }
+        }
         /// 清除所有路线图层
         public void ClearRouteLayers()
         {
@@ -296,39 +333,6 @@ namespace SmartNanjingTravel.ViewModels
                 Console.WriteLine($"清除图层失败: {ex.Message}");
             }
         }
-
-/*        /// 创建点渲染器
-        private SimpleRenderer CreatePointRenderer()
-        {
-            var pointSymbol = new SimpleMarkerSymbol()
-            {
-                Style = SimpleMarkerSymbolStyle.Circle,
-                Color = System.Drawing.Color.Red,
-                Size = 10,
-                Outline = new SimpleLineSymbol()
-                {
-                    Color = System.Drawing.Color.White,
-                    Width = 1.5
-                }
-            };
-
-            return new SimpleRenderer(pointSymbol);
-        }
-
-        /// <summary>
-        /// 创建线渲染器（原有的方法，保留）
-        /// </summary>
-        private SimpleRenderer CreateLineRenderer()
-        {
-            var lineSymbol = new SimpleLineSymbol()
-            {
-                Style = SimpleLineSymbolStyle.Solid,
-                Color = System.Drawing.Color.Blue,
-                Width = 3
-            };
-
-            return new SimpleRenderer(lineSymbol);
-        }*/
 
 
         #region INotifyPropertyChanged

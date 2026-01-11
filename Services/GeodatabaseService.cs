@@ -27,7 +27,7 @@ namespace SmartNanjingTravel.Services
             string dataDirectory = Path.Combine(baseDirectory, "Data");
 
             // 移动地理数据库文件路径
-            _geodatabasePath = System.IO.Path.Combine(dataDirectory, "Smart Traveling.geodatabase");
+            _geodatabasePath = System.IO.Path.Combine(dataDirectory, "Travel.geodatabase");
         }
 
         // 获取所有可用的路线名称
