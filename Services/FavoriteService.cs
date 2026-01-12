@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 
+
 namespace SmartNanjingTravel.Services
 {
     /// <summary>
@@ -14,28 +15,15 @@ namespace SmartNanjingTravel.Services
     {
         private string? _databasePath;
 
-        /// <summary>
         /// 初始化数据库
-        /// </summary>
-        /// 
         public FavoriteService()
         {
             // 获取当前程序集所在目录
             string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-
-            // 数据库放在可执行文件所在目录的 Data 文件夹中
             string dataDirectory = Path.Combine(baseDirectory, "Data");
-
-            // 确保 Data 目录存在
-            if (!Directory.Exists(dataDirectory))
-            {
-                Directory.CreateDirectory(dataDirectory);
-            }
 
             // 数据库文件路径
             _databasePath = Path.Combine(dataDirectory, "Travel.db");
-
-            Console.WriteLine($"数据库路径: {_databasePath}");
         }
         public void InitializeDatabase()
         {
@@ -46,7 +34,6 @@ namespace SmartNanjingTravel.Services
                 {
                     connection.Open();
 
-                    // 创建收藏表（简化版）
                     using (var command = connection.CreateCommand())
                     {
                         command.CommandText = @"

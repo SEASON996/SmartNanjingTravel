@@ -17,6 +17,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Data\Travel.geodatabase">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Data\Travel.db">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
