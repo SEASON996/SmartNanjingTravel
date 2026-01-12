@@ -250,7 +250,7 @@ namespace SmartNanjingTravel.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"加载路线异常: {ex.Message}", "错误");
+/*                MessageBox.Show($"加载路线异常: {ex.Message}", "错误");*/
                 return false;
             }
         }
