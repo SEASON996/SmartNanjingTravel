@@ -115,7 +115,7 @@ namespace SmartNanjingTravel.ViewModels
             {
                 if (isguihua)
                 {
-                    var results = await _amapService.QueryPoiAsync(InputAddress, "南京");
+                    var results = await _amapService.QueryPoiAsync(keyword: InputAddress,city: "南京",maxResults: 40);
                     AddressInfoList.Clear();
                     var j = 0;
                     foreach (var item in results)
