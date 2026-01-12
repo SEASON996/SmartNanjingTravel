@@ -1060,7 +1060,6 @@
                                            FontSize="16" 
                                            FontWeight="Bold"
                                            Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
-                                           
                                            VerticalAlignment="Center"/>
 
                             <Button Grid.Column="1"
