@@ -43,7 +43,6 @@ namespace SmartNanjingTravel.ViewModels
 
         public MapViewModel()
         {
-            InitializeMap();
             _geodatabaseService = new Services.GeodatabaseService();
             InitializeMap();                 // 原有方法
             AddSatelliteBasemapOption();     // 新增卫星选项
@@ -63,7 +62,6 @@ namespace SmartNanjingTravel.ViewModels
         // 初始加载高德底图
         private void SetAmapBaseMap()
         {
-            // 你原来的高德底图（style=8）
             _originalGaodeLayer = new Esri.ArcGISRuntime.Mapping.WebTiledLayer(
             "https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={col}&y={row}&z={level}",
             new System.Collections.Generic.List<string> { "1", "2", "3", "4", "5" })
