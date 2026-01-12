@@ -41,6 +41,10 @@ namespace SmartNanjingTravel.Models
             set
             {
                 _isVisible = value;
+                if (Layer != null)
+                {
+                    Layer.IsVisible = value;
+                }
                 Layer.IsVisible = value;
                 OnPropertyChanged();
             }

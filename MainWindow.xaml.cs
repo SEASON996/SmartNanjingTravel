@@ -63,6 +63,7 @@ namespace SmartNanjingTravel
 
             // 初始化时加载收藏数据
             LoadFavoritesData();
+
         }
 
         // 放大
