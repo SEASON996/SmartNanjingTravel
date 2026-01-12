@@ -43,7 +43,6 @@ namespace SmartNanjingTravel.ViewModels
 
         public MapViewModel()
         {
-            InitializeMap();
             _geodatabaseService = new Services.GeodatabaseService();
             InitializeMap();                 // 原有方法
             AddSatelliteBasemapOption();     // 新增卫星选项
