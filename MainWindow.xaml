@@ -454,7 +454,7 @@
                                                                          Width="18" 
                                                                          Height="18" 
                                                                          Margin="0,0,8,0"/>
-                                                <TextBlock Text="开始导航"/>
+                                                <TextBlock Text="{Binding}"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </Button.ContentTemplate>
@@ -768,7 +768,7 @@
                     Margin="8"
                     Height="220">
                                         <Button.Background>
-                                            <ImageBrush ImageSource="https://bpic.588ku.com/back_origin_min_pic/23/04/19/f89ef1467371dac8c4a7b94c2a43cc48.jpg"
+                                            <ImageBrush ImageSource="Image/f89ef1467371dac8c4a7b94c2a43cc48.jpg"
                                 Stretch="UniformToFill"/>
                                         </Button.Background>
                                         <Button.Template>
@@ -933,7 +933,7 @@
                     Margin="8"
                     Height="220">
                                         <Button.Background>
-                                            <ImageBrush ImageSource="https://imgs.699pic.com/images/501/634/873.jpg!detail.v1"
+                                            <ImageBrush ImageSource="https://pic.nximg.cn/file/20150428/9129085_154129797000_2.jpg"
                                 Stretch="UniformToFill"/>
                                         </Button.Background>
                                         <Button.Template>
@@ -959,7 +959,7 @@
                     Margin="8"
                     Height="220">
                                         <Button.Background>
-                                            <ImageBrush ImageSource="https://imgs.699pic.com/images/501/111/659.jpg!detail.v1"
+                                            <ImageBrush ImageSource="https://pic.nximg.cn/file/20220915/2572038_082921339102_2.jpg"
                                 Stretch="UniformToFill"/>
                                         </Button.Background>
                                         <Button.Template>

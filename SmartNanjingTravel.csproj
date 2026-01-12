@@ -11,6 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Image\f89ef1467371dac8c4a7b94c2a43cc48.jpg" />
     <None Remove="Image\icons1.png" />
     <None Remove="Travel.db" />
   </ItemGroup>
@@ -36,6 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Image\f89ef1467371dac8c4a7b94c2a43cc48.jpg" />
     <Resource Include="Image\icons1.png" />
   </ItemGroup>
 </Project>
