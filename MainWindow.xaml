@@ -322,7 +322,7 @@
                                         <TextBox Grid.Row="1"
                                                  x:Name="StartPointTextBox"
                                                  Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                                 materialDesign:HintAssist.Hint="请输入起点位置或选择地图上的点"
+                                                 materialDesign:HintAssist.Hint="请输入起点位置"
                                                  FontSize="14"
                                                  Padding="10,8"
                                                  BorderThickness="0"/>

@@ -131,9 +131,9 @@ namespace SmartNanjingTravel.ViewModels
 
             if (selectedItem.Name == "标准地图")
             {
-                // 确保使用街道样式的 URL (style=7 或 8)
-                var streetLayer = new WebTiledLayer("https://webst01.is.autonavi.com/appmaptile?style=7&x={col}&y={row}&z={level}");
-                newBasemap.BaseLayers.Add(streetLayer);
+                // 直接使用类成员变量，确保 URL、Attribution 与初始加载时完全一致
+                // 之前报错是因为尝试访问不存在的 .Parent 属性，现在直接 Add 即可
+                newBasemap.BaseLayers.Add(_originalGaodeLayer);
             }
             else if (selectedItem.Name == "卫星地图")
             {
