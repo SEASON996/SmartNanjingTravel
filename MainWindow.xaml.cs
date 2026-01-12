@@ -156,6 +156,14 @@ namespace SmartNanjingTravel
         // 面板切换方法
         private void SwitchPanel(FrameworkElement panelToShow)
         {
+            // --- 新增：清除地图上的路径图层 ---
+            // 获取当前的 ViewModel 实例（通常在 Resources 或 DataContext 中）
+            var viewModel = this.Resources["MapViewModel"] as MapViewModel;
+            if (viewModel != null)
+            {
+                // 调用您在 MapViewModel.cs 中已经写好的清除方法
+                viewModel.ClearRouteLayers();
+            }
             // 如果显示其他面板，则隐藏景区图层
             if (panelToShow != null &&
                 panelToShow != FavoritesPanel &&

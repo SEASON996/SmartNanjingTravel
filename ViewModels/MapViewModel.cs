@@ -331,11 +331,12 @@ namespace SmartNanjingTravel.ViewModels
             }
         }
         /// 清除所有路线图层
+        // MapViewModel.cs
         public void ClearRouteLayers()
         {
             try
             {
-                // 从地图中移除
+                // 1. 从地图的业务图层中移除
                 var layersToRemove = Map.OperationalLayers
                     .Where(l => l.Name != null && (l.Name.Contains("路线") || l.Name.Contains("景点")))
                     .ToList();
@@ -345,7 +346,7 @@ namespace SmartNanjingTravel.ViewModels
                     Map.OperationalLayers.Remove(layer);
                 }
 
-                // 从LayerItems中移除
+                // 2. 同时清除 UI 绑定的 LayerItems（如果有的话）
                 var itemsToRemove = LayerItems
                     .Where(item => item.Name != null && (item.Name.Contains("路线") || item.Name.Contains("景点")))
                     .ToList();
