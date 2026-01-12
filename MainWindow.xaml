@@ -456,22 +456,22 @@
                                                                          Width="18" 
                                                                          Height="18" 
                                                                          Margin="0,0,8,0"/>
-                                            <TextBlock Text="开始导航"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </Button.ContentTemplate>
-                            </Button>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-            </Border>
-
-
-            <!-- 我的收藏面板（默认折叠） -->
-            <Border x:Name="FavoritesPanel"
-                    Width="400"  HorizontalAlignment="Left" VerticalAlignment="Top"
-                    Margin="20,20,0,90" Background="#FFFFFFFF" CornerRadius="8" Padding="0"
-                    Visibility="Collapsed" BorderBrush="#FFE0E0E0" BorderThickness="1" Grid.Row="1">
+                                                <TextBlock Text="{Binding}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </Button.ContentTemplate>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+                
+                
+                <!-- 我的收藏面板（默认折叠） -->
+                <Border x:Name="FavoritesPanel"
+                        Width="400"  HorizontalAlignment="Left" VerticalAlignment="Top"
+                        Margin="20,20,20,0" Background="#FFFFFFFF" CornerRadius="8" Padding="0"
+                        Visibility="Collapsed" BorderBrush="#FFE0E0E0" BorderThickness="1" Grid.Row="1">
 
                 <Grid>
                     <Grid.RowDefinitions>
@@ -765,7 +765,7 @@
                                         Height="220">
                                         <Button.Background>
                                             <ImageBrush ImageSource="https://bpic.588ku.com/back_origin_min_pic/23/04/19/f89ef1467371dac8c4a7b94c2a43cc48.jpg"
-                                                    Stretch="UniformToFill"/>
+                                Stretch="UniformToFill"/>
                                         </Button.Background>
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -929,7 +929,7 @@
                     Margin="8"
                     Height="220">
                                         <Button.Background>
-                                            <ImageBrush ImageSource="https://imgs.699pic.com/images/501/634/873.jpg!detail.v1"
+                                            <ImageBrush ImageSource="https://pic.nximg.cn/file/20150428/9129085_154129797000_2.jpg"
                                 Stretch="UniformToFill"/>
                                         </Button.Background>
                                         <Button.Template>
@@ -955,7 +955,7 @@
                     Margin="8"
                     Height="220">
                                         <Button.Background>
-                                            <ImageBrush ImageSource="https://imgs.699pic.com/images/501/111/659.jpg!detail.v1"
+                                            <ImageBrush ImageSource="https://pic.nximg.cn/file/20220915/2572038_082921339102_2.jpg"
                                 Stretch="UniformToFill"/>
                                         </Button.Background>
                                         <Button.Template>
