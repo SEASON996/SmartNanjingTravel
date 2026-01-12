@@ -63,6 +63,7 @@ namespace SmartNanjingTravel
 
             // 初始化时加载收藏数据
             LoadFavoritesData();
+
         }
 
         // 放大
@@ -502,6 +503,28 @@ namespace SmartNanjingTravel
         private void CloseRoutePlanningPanel_Click(object sender, RoutedEventArgs e)
         {
             RoutePlanningPanel.Visibility = Visibility.Collapsed;
+            // 1. 获取或创建用于显示路线的图层
+            var routeOverlay = MyMapView.GraphicsOverlays.FirstOrDefault(o => o.Id == "RouteOverlay");
+            if (routeOverlay == null)
+            {
+                routeOverlay = new GraphicsOverlay { Id = "RouteOverlay" };
+                MyMapView.GraphicsOverlays.Add(routeOverlay);
+            }
+
+            routeOverlay.Graphics.Clear();
+            // --- 0. 准备工作：清理旧图层 ---
+            var oldLayer = MyMapView.Map.OperationalLayers.FirstOrDefault(l => l.Id == "ScenicSpotsLayer");
+            if (oldLayer != null)
+            {
+                MyMapView.Map.OperationalLayers.Remove(oldLayer);
+            }
+
+            // 如果你之前还用了 GraphicsOverlay，也要清理掉，防止重影
+            var oldOverlay = MyMapView.GraphicsOverlays.FirstOrDefault(o => o.Id == "ScenicSpotsOverlay");
+            if (oldOverlay != null)
+            {
+                MyMapView.GraphicsOverlays.Remove(oldOverlay);
+            }
         }
 
         // --- 修改添加按钮事件 ---
@@ -528,8 +551,11 @@ namespace SmartNanjingTravel
             DestinationTextBox.Text = "";
             ViaPoints.Clear();
         }
+        //开始导航
         private async void SearchRouteButton_Click(object sender, RoutedEventArgs e)
+
         {
+            SearchRouteButton.Content= "导航中...";
             // 1. 从界面获取输入
             string start = StartPointTextBox.Text;
             string destination = DestinationTextBox.Text;
