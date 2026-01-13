@@ -74,10 +74,6 @@ namespace SmartNanjingTravel
 
             // 初始化时加载收藏数据
             LoadFavoritesData();
-
-            RatingDistributionChart = new OxyPlot.Wpf.PlotView();
-            DistrictRatingChart = new OxyPlot.Wpf.PlotView();
-
         }
 
         // 放大
@@ -1101,8 +1097,6 @@ namespace SmartNanjingTravel
         {
             try
             {
-               Debug.WriteLine("开始加载评分统计...");
-                Debug.WriteLine($"AddressInfoList 数量: {_amapPoiViewModel?.AddressInfoList?.Count ?? 0}");
                 var allRatings = new List<double>();
                 var districtRatings = new Dictionary<string, List<double>>();
 
@@ -1148,50 +1142,7 @@ namespace SmartNanjingTravel
                         // 这里需要异步查询，所以可能需要修改方法为 async
                         // 简化处理：直接从 _amapPoiViewModel 获取数据
                     }
-                }
-
-                // 方法3：从 POI_INFO 数据库表获取历史数据
-                if (allRatings.Count == 0)
-                {
-                    try
-                    {
-                        using (var connection = new SqliteConnection($"Data Source={DatabaseHelper.DatabasePath}"))
-                        {
-                            connection.Open();
-
-                            using (var command = connection.CreateCommand())
-                            {
-                                command.CommandText = @"
-                            SELECT RATING, ADNAME 
-                            FROM POI_INFO 
-                            WHERE RATING IS NOT NULL AND RATING != ''";
-
-                                using (var reader = command.ExecuteReader())
-                                {
-                                    while (reader.Read())
-                                    {
-                                        string ratingStr = reader["RATING"]?.ToString();
-                                        string district = reader["ADNAME"]?.ToString() ?? "未知";
-
-                                        if (double.TryParse(ratingStr, out double rating))
-                                        {
-                                            allRatings.Add(rating);
-
-                                            if (!districtRatings.ContainsKey(district))
-                                            {
-                                                districtRatings[district] = new List<double>();
-                                            }
-                                            districtRatings[district].Add(rating);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"从数据库获取评分数据失败: {ex.Message}");
-                    }
+                
                 }
 
                 // 更新UI
@@ -1244,102 +1195,139 @@ namespace SmartNanjingTravel
             MinRatingText.Text = min.ToString("F1");
         }
 
-        // 创建评分分布柱状图
         private void CreateRatingDistributionChart(List<double> ratings)
         {
-            if (ratings.Count == 0) return;
-
-            // 创建数据模型
-            _ratingDistributionModel = new PlotModel
+            if (ratings == null || ratings.Count == 0)
             {
-                Title = "评分分布",
+
+                // 创建空图表显示提示
+                var emptyModel = new PlotModel
+                {
+                    Title = "暂无评分数据",
+                    TitleColor = OxyColors.Gray,
+                    TitleFontSize = 14,
+                    Background = OxyColors.White
+                };
+
+                RatingDistributionChart.Model = emptyModel;
+                return;
+            }
+
+            // 创建 PlotModel
+            var model = new PlotModel
+            {
+                TitleFontSize = 16,
                 TitleColor = OxyColors.Black,
-                TitleFontSize = 14,
-                PlotAreaBorderThickness = new OxyThickness(0),
+                DefaultFont = "Microsoft YaHei",
+                DefaultFontSize = 12,
                 Background = OxyColors.White,
-                PlotAreaBackground = OxyColors.White
+                PlotAreaBorderThickness = new OxyThickness(1.5, 1.5, 1.5, 1.5),
+                PlotAreaBorderColor = OxyColor.FromArgb(255, 47, 47, 47)
             };
 
-            // 创建柱状图系列（使用BarSeries代替ColumnSeries）
+            var ratingGroups = new Dictionary<string, int>
+            {
+                {"3.8以下", 0},
+                {"3.8-4.0", 0},
+                {"4.0-4.2", 0},
+                {"4.2-4.4", 0},
+                {"4.4-4.6", 0},
+                {"4.6-4.8", 0},
+                {"4.8-5.0", 0}
+            };
+            // 统计评分分布
+            foreach(var rating in ratings)
+            {
+                if (rating < 3.8)
+                    ratingGroups["3.8以下"]++;
+                else if (rating >= 3.8 && rating < 4.0)
+                    ratingGroups["3.8-4.0"]++;
+                else if (rating >= 4.0 && rating < 4.2)
+                    ratingGroups["4.0-4.2"]++;
+                else if (rating >= 4.2 && rating < 4.4)
+                    ratingGroups["4.2-4.4"]++;
+                else if (rating >= 4.4 && rating < 4.6)
+                    ratingGroups["4.4-4.6"]++;
+                else if (rating >= 4.6 && rating < 4.8)
+                    ratingGroups["4.6-4.8"]++;
+                else if (rating >= 4.8 && rating <= 5.0)
+                    ratingGroups["4.8-5.0"]++;
+            }
+
+            // 创建条形图系列
             var series = new BarSeries
             {
                 Title = "数量",
                 FillColor = OxyColor.FromRgb(103, 58, 183), // 紫色
-                StrokeColor = OxyColors.Black,
-                StrokeThickness = 1,
-                LabelPlacement = LabelPlacement.Inside,
-                LabelFormatString = "{0}"
+                LabelPlacement = LabelPlacement.Outside,
+                LabelFormatString = "{0}",
+                Font = "Microsoft YaHei",
+                BarWidth = 0.8
             };
 
-            // 定义评分区间（更精细的划分）
-            var ratingBins = new Dictionary<string, int>
-    {
-        {"1-1.5星", 0},
-        {"1.5-2星", 0},
-        {"2-2.5星", 0},
-        {"2.5-3星", 0},
-        {"3-3.5星", 0},
-        {"3.5-4星", 0},
-        {"4-4.5星", 0},
-        {"4.5-5星", 0}
-    };
-
-            // 统计各区间数量
-            foreach (var rating in ratings)
-            {
-                if (rating >= 1.0 && rating < 1.5)
-                    ratingBins["1-1.5星"]++;
-                else if (rating >= 1.5 && rating < 2.0)
-                    ratingBins["1.5-2星"]++;
-                else if (rating >= 2.0 && rating < 2.5)
-                    ratingBins["2-2.5星"]++;
-                else if (rating >= 2.5 && rating < 3.0)
-                    ratingBins["2.5-3星"]++;
-                else if (rating >= 3.0 && rating < 3.5)
-                    ratingBins["3-3.5星"]++;
-                else if (rating >= 3.5 && rating < 4.0)
-                    ratingBins["3.5-4星"]++;
-                else if (rating >= 4.0 && rating < 4.5)
-                    ratingBins["4-4.5星"]++;
-                else if (rating >= 4.5 && rating <= 5.0)
-                    ratingBins["4.5-5星"]++;
-            }
-
-            // 创建数据点
+            // 添加数据点
             var categories = new List<string>();
-            var values = new List<double>();
+            int categoryIndex = 0;
 
-            foreach (var kvp in ratingBins)
+            foreach (var kvp in ratingGroups)
             {
                 categories.Add(kvp.Key);
-                values.Add(kvp.Value);
-                series.Items.Add(new BarItem(kvp.Value));
+                series.Items.Add(new BarItem(kvp.Value, categoryIndex));
+                categoryIndex++;
+                Debug.WriteLine($"{kvp.Key}: {kvp.Value}个");
             }
 
-            // 添加X轴（数值轴）
-            _ratingDistributionModel.Axes.Add(new LinearAxis
+            // 添加 Y 轴（类别轴）
+            model.Axes.Add(new CategoryAxis
+            {
+                Position = AxisPosition.Left,
+                ItemsSource = categories,
+                Title = "评分区间",
+                TitleFontSize = 13,
+                AxisTitleDistance = 8,
+                TitleFontWeight = OxyPlot.FontWeights.Bold,
+                GapWidth = 0.4,
+            });
+
+            // 添加 X 轴（数值轴）
+            var xAxis = new LinearAxis
             {
                 Position = AxisPosition.Bottom,
                 Title = "数量",
+                TitleFontSize = 13,
+                TitleFontWeight = OxyPlot.FontWeights.Bold,
+                AxisTitleDistance = 8,
+                FontSize = 11,
                 Minimum = 0,
-                AbsoluteMinimum = 0,
-                MajorGridlineStyle = LineStyle.Solid,
-                MinorGridlineStyle = LineStyle.Dot,
-                MajorGridlineColor = OxyColor.FromArgb(40, 0, 0, 0),
-                MinorGridlineColor = OxyColor.FromArgb(20, 0, 0, 0)
-            });
+                MinimumPadding = 0,
+                MaximumPadding = 0.1
+            };
 
-            // 添加Y轴（类别轴）
-            _ratingDistributionModel.Axes.Add(new CategoryAxis
+            // 自动设置主要刻度，基于最大数量
+            int maxCount = ratingGroups.Values.Max();
+            if (maxCount <= 10)
             {
-                Position = AxisPosition.Left,
-                Title = "评分区间",
-                ItemsSource = categories,
-                GapWidth = 0.2
-            });
+                xAxis.MajorStep = 1; // 数量少时，每1个单位一个刻度
+                xAxis.MinorStep = 0.5;
+            }
+            else if (maxCount <= 50)
+            {
+                xAxis.MajorStep = 5; // 数量中等时，每5个单位一个刻度
+                xAxis.MinorStep = 1;
+            }
+            else
+            {
+                xAxis.MajorStep = Math.Ceiling(maxCount / 10.0); // 自动计算合适的刻度间隔
+                xAxis.MinorStep = xAxis.MajorStep / 5;
+            }
 
-            _ratingDistributionModel.Series.Add(series);
-            RatingDistributionChart.Model = _ratingDistributionModel;
+            model.Axes.Add(xAxis);
+
+            model.Series.Add(series);
+
+            // 设置图表
+            RatingDistributionChart.Model = model;
+            RatingDistributionChart.InvalidatePlot(); // 强制刷新显示
         }
 
         // 创建行政区评分饼图
@@ -1349,33 +1337,36 @@ namespace SmartNanjingTravel
 
             _districtRatingModel = new PlotModel
             {
-                Title = "行政区POI数量分布",
                 TitleColor = OxyColors.Black,
                 TitleFontSize = 14,
-                PlotAreaBorderThickness = new OxyThickness(0)
+                PlotAreaBorderThickness = new OxyThickness(0),
+                DefaultFont = "Microsoft YaHei",
+
             };
 
             var series = new PieSeries
             {
+                Font = "Microsoft YaHei",
                 StrokeThickness = 2,
                 InsideLabelPosition = 0.8,
                 AngleSpan = 360,
                 StartAngle = 0,
-                OutsideLabelFormat = "{1}: {0:F0}",
-                TrackerFormatString = "{0}: {1}个POI，平均评分{3:F1}"
+                OutsideLabelFormat = "{1}: {0}个",
+                InsideLabelFormat = "",  // 设置为空字符串，不显示内部标签
+
             };
 
             // 定义颜色方案
             var colors = new[]
             {
-        OxyColor.FromRgb(103, 58, 183),   // 紫色
-        OxyColor.FromRgb(33, 150, 243),   // 蓝色
-        OxyColor.FromRgb(0, 150, 136),    // 青色
-        OxyColor.FromRgb(255, 193, 7),    // 黄色
-        OxyColor.FromRgb(255, 87, 34),    // 橙色
-        OxyColor.FromRgb(156, 39, 176),   // 深紫色
-        OxyColor.FromRgb(76, 175, 80)     // 绿色
-    };
+                OxyColor.FromRgb(103, 58, 183),   // 紫色
+                OxyColor.FromRgb(33, 150, 243),   // 蓝色
+                OxyColor.FromRgb(0, 150, 136),    // 青色
+                OxyColor.FromRgb(255, 193, 7),    // 黄色
+                OxyColor.FromRgb(255, 87, 34),    // 橙色
+                OxyColor.FromRgb(156, 39, 176),   // 深紫色
+                OxyColor.FromRgb(76, 175, 80)     // 绿色
+            };
 
             int colorIndex = 0;
 
@@ -1385,7 +1376,7 @@ namespace SmartNanjingTravel
                 if (kvp.Value.Count == 0) continue;
 
                 double averageRating = kvp.Value.Average();
-                string label = $"{kvp.Key} ({kvp.Value.Count}个)";
+                string label = kvp.Key;
 
                 series.Slices.Add(new PieSlice(label, kvp.Value.Count)
                 {
