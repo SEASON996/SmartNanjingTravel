@@ -66,7 +66,6 @@ namespace SmartNanjingTravel.ViewModels
             "https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={col}&y={row}&z={level}",
             new System.Collections.Generic.List<string> { "1", "2", "3", "4", "5" })
             {
-/*                Attribution = "Map data ©2015 AutoNavi - GS(2015)2080号",*/
                 Name = "标准地图",
                 IsVisible = true
             };

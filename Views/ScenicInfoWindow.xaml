@@ -202,7 +202,6 @@ x:Name="ImgScenic"
                                 TextWrapping="Wrap"
                                 TextTrimming="CharacterEllipsis"
                                 MaxHeight="60">
-                                智游金陵为您提供南京丰富的文化旅游景点信息，欢迎探索六朝古都的魅力。
                             </TextBlock>
                         </StackPanel>
                     </Border>
@@ -230,15 +229,7 @@ x:Name="ImgScenic"
                     </Button>
 
                     <!-- 分享按钮 -->
-                    <Button
-                        Width="36"
-                        Height="36"
-                        Padding="2,0,2,0"
-                        materialDesign:RippleAssist.IsCentered="True"
-                        Style="{StaticResource MaterialDesignToolButton}"
-                        ToolTip="分享">
-                        <materialDesign:PackIcon Kind="ShareVariant" />
-                    </Button>
+
                 </StackPanel>
             </Grid>
         </materialDesign:Card>

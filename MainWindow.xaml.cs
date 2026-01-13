@@ -5,21 +5,12 @@ using Esri.ArcGISRuntime.Reduction;
 using Esri.ArcGISRuntime.Symbology;
 using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.UI.Controls;
-using Microsoft.Data.Sqlite;
 using Microsoft.Win32;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
-using SmartNanjingTravel.Data;
-using SmartNanjingTravel.Models;
-using SmartNanjingTravel.ViewModels;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
-using System.Net.Http;
-using System.Runtime.Intrinsics.X86;
 using System.Text;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -30,6 +21,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using SmartNanjingTravel.Services;
+using SmartNanjingTravel.Models;
+using SmartNanjingTravel.ViewModels;
+using System.Collections.ObjectModel;
 
 namespace SmartNanjingTravel
 {
@@ -38,6 +33,7 @@ namespace SmartNanjingTravel
     /// </summary>
     public partial class MainWindow : Window
     {
+        private bool _isInitialLoading = true;
         private AmapRouteService _amapService = new AmapRouteService();
         private AmapPoiViewModel _amapPoiViewModel;
         private ObservableCollection<SmartNanjingTravel.Models.FavoriteItem> _favoriteItems = new ObservableCollection<SmartNanjingTravel.Models.FavoriteItem>();
@@ -51,8 +47,6 @@ namespace SmartNanjingTravel
         public class ViaPointItem
         {
             public string Address { get; set; } = "";
-
-            // 为了方便调试，您可以重写 ToString
             public override string ToString() => Address;
         }
 
@@ -74,8 +68,43 @@ namespace SmartNanjingTravel
 
             // 初始化时加载收藏数据
             LoadFavoritesData();
-        }
 
+            this.Loaded += MainWindow_Loaded;
+        }
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _isInitialLoading = true;
+
+                // 设置查询关键词为南京的主要景点类型
+                _amapPoiViewModel.InputAddress = "景点";
+
+                // 调用查询方法
+                await _amapPoiViewModel.QueryPoiAsync(MyMapView, 40);
+
+                // 定位到南京区域
+                await MyMapView.SetViewpointAsync(new Viewpoint(
+                    new MapPoint(118.8, 32.05, SpatialReferences.Wgs84),
+                    50000));
+
+                // 更新状态
+                _isScenicLayerVisible = true;
+/*                HomeButtonText.Text = "关闭总览"; // 更新按钮文本提示*/
+
+                // 存储图层引用以便后续移除
+                StoreLayerReferences();
+
+                // 设置初始加载完成
+                _isInitialLoading = false;
+            }
+            catch (Exception ex)
+            {
+                _isInitialLoading = false;
+                MessageBox.Show($"初始化加载景点失败：{ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
         // 放大
         private async void ZoomIn_Click(object sender, RoutedEventArgs e)
         {
@@ -166,25 +195,23 @@ namespace SmartNanjingTravel
         // 面板切换方法
         private void SwitchPanel(FrameworkElement panelToShow)
         {
-            // --- 新增：清除地图上的路径图层 ---
-            // 获取当前的 ViewModel 实例（通常在 Resources 或 DataContext 中）
+            // 获取当前的 ViewModel 实例
             var viewModel = this.Resources["MapViewModel"] as MapViewModel;
             if (viewModel != null)
             {
-                // 调用您在 MapViewModel.cs 中已经写好的清除方法
+                // 调用MapViewModel.cs 中已经写好的清除方法
                 viewModel.ClearRouteLayers();
             }
             // 如果显示其他面板，则隐藏景区图层
             if (panelToShow != null &&
                 panelToShow != FavoritesPanel &&
                 panelToShow != RoutePlanningPanel &&
-                panelToShow != RecommendationPanel)
+                panelToShow != RecommendationPanel &&
+                !_isInitialLoading) 
             {
                 if (_isScenicLayerVisible)
                 {
                     RemoveScenicLayer();
-                    if (HomeButtonText != null)
-                        HomeButtonText.Text = "景区总览";
                 }
             }
 
@@ -219,7 +246,7 @@ namespace SmartNanjingTravel
                 if (_isScenicLayerVisible)
                 {
                     RemoveScenicLayer();
-                    HomeButtonText.Text = "景区总览"; // 更新按钮文本提示
+/*                    HomeButtonText.Text = "打开总览"; // 更新按钮文本提示*/
                     return;
                 }
 
@@ -229,7 +256,7 @@ namespace SmartNanjingTravel
                 _amapPoiViewModel.InputAddress = "景点";
 
                 // 调用查询方法
-                await _amapPoiViewModel.QueryPoiAsync(MyMapView, 30);
+                await _amapPoiViewModel.QueryPoiAsync(MyMapView, 40);
 
                 // 定位到南京区域
                 await MyMapView.SetViewpointAsync(new Viewpoint(
@@ -238,7 +265,7 @@ namespace SmartNanjingTravel
 
                 // 更新状态
                 _isScenicLayerVisible = true;
-                HomeButtonText.Text = "景区总览"; // 更新按钮文本提示
+/*                HomeButtonText.Text = "关闭总览"; // 更新按钮文本提示*/
 
                 // 存储图层引用以便后续移除
                 StoreLayerReferences();
@@ -846,51 +873,8 @@ namespace SmartNanjingTravel
                         return;
                     }
 
-                    // 显示加载提示
-                    var loadingDialog = new Window
-                    {
-                        Title = "正在加载",
-                        Width = 300,
-                        Height = 120,
-                        WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                        Owner = this,
-                        WindowStyle = WindowStyle.ToolWindow,
-                        ResizeMode = ResizeMode.NoResize,
-                        ShowInTaskbar = false
-                    };
-
-                    var stackPanel = new StackPanel
-                    {
-                        VerticalAlignment = System.Windows.VerticalAlignment.Center,
-                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                        Margin = new Thickness(20)
-                    };
-
-                    var progressBar = new ProgressBar
-                    {
-                        IsIndeterminate = true,
-                        Width = 200,
-                        Height = 20,
-                        Margin = new Thickness(0, 0, 0, 15)
-                    };
-
-                    var textBlock = new TextBlock
-                    {
-                        Text = $"正在加载【{routeName}】路线...",
-                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                        TextWrapping = TextWrapping.Wrap,
-                        TextAlignment = TextAlignment.Center
-                    };
-
-                    stackPanel.Children.Add(progressBar);
-                    stackPanel.Children.Add(textBlock);
-                    loadingDialog.Content = stackPanel;
-                    loadingDialog.Show();
-
                     // 调用MapViewModel的LoadRouteToMap方法
                     bool success = await mapViewModel.LoadRouteToMap(routeName);
-
-                    loadingDialog.Close();
 
                 }
                 catch (Exception ex)
@@ -924,52 +908,8 @@ namespace SmartNanjingTravel
                         return;
                     }
 
-                    // 显示加载提示
-                    var loadingDialog = new Window
-                    {
-                        Title = "正在加载",
-                        Width = 300,
-                        Height = 120,
-                        WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                        Owner = this,
-                        WindowStyle = WindowStyle.ToolWindow,
-                        ResizeMode = ResizeMode.NoResize,
-                        ShowInTaskbar = false
-                    };
-
-                    var stackPanel = new StackPanel
-                    {
-                        VerticalAlignment = System.Windows.VerticalAlignment.Center,
-                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                        Margin = new Thickness(20)
-                    };
-
-                    var progressBar = new ProgressBar
-                    {
-                        IsIndeterminate = true,
-                        Width = 200,
-                        Height = 20,
-                        Margin = new Thickness(0, 0, 0, 15)
-                    };
-
-                    var textBlock = new TextBlock
-                    {
-                        Text = $"正在加载【{routeName}】路线...",
-                        HorizontalAlignment = System.Windows.HorizontalAlignment.Center,
-                        TextWrapping = TextWrapping.Wrap,
-                        TextAlignment = TextAlignment.Center
-                    };
-
-                    stackPanel.Children.Add(progressBar);
-                    stackPanel.Children.Add(textBlock);
-                    loadingDialog.Content = stackPanel;
-                    loadingDialog.Show();
-
                     // 调用MapViewModel的LoadRouteToMap方法
                     bool success = await mapViewModel.LoadRouteToMap(routeName);
-
-                    loadingDialog.Close();
-
                 }
                 catch (Exception ex)
                 {
@@ -998,8 +938,6 @@ namespace SmartNanjingTravel
             {
                 if (!string.IsNullOrWhiteSpace(viaPoint.Address)) midPoints.Add(viaPoint.Address);
             }
-            //midPoints.Add(start);
-            //midPoints.Add(destination);
 
             var result = await _amapService.GetDrivingRoutePathAsync(start, destination, midPoints);
 
@@ -1222,7 +1160,6 @@ namespace SmartNanjingTravel
             MaxRatingText.Text = max.ToString("F1");
             MinRatingText.Text = min.ToString("F1");
         }
-
         private void CreateRatingDistributionChart(List<double> ratings)
         {
             if (ratings == null || ratings.Count == 0)
@@ -1302,7 +1239,6 @@ namespace SmartNanjingTravel
                 categories.Add(kvp.Key);
                 series.Items.Add(new BarItem(kvp.Value, categoryIndex));
                 categoryIndex++;
-                Debug.WriteLine($"{kvp.Key}: {kvp.Value}个");
             }
 
             // 添加 Y 轴（类别轴）
@@ -1380,8 +1316,8 @@ namespace SmartNanjingTravel
                 AngleSpan = 360,
                 StartAngle = 0,
                 OutsideLabelFormat = "{1}: {0}个",
-                InsideLabelFormat = "",  // 设置为空字符串，不显示内部标签
-
+                InsideLabelFormat = "",
+                Diameter = 0.85
             };
 
             // 定义颜色方案
@@ -1409,7 +1345,6 @@ namespace SmartNanjingTravel
                 series.Slices.Add(new PieSlice(label, kvp.Value.Count)
                 {
                     Fill = colors[colorIndex % colors.Length]
-                    // 在Tooltip中显示平均评分
                 });
 
                 colorIndex++;
@@ -1417,278 +1352,6 @@ namespace SmartNanjingTravel
 
             _districtRatingModel.Series.Add(series);
             DistrictRatingChart.Model = _districtRatingModel;
-        }
-
-
-        // 路径规划类
-        public class AmapRouteService
-        {
-            // 您的 Key
-            private const string ApiKey = "88eb4252bbd3f175d95e1fe5501da57c";
-            private readonly HttpClient _httpClient = new HttpClient();
-
-            // 改了返回值：Task<RouteResult>
-            public async Task<RouteResult> GetDrivingRoutePathAsync(string startAddr, string endAddr, List<string> viaAddrs)
-            {
-                try
-                {
-                    // 1. 解析所有地址为坐标
-                    var startLoc = await GetLocationByAddressAsync(startAddr);
-                    if (startLoc == null) { MessageBox.Show($"无法识别起点：{startAddr}"); return null; }
-
-                    var endLoc = await GetLocationByAddressAsync(endAddr);
-                    if (endLoc == null) { MessageBox.Show($"无法识别终点：{endAddr}"); return null; }
-
-                    var viaLocs = new List<GeoPoint>();
-                    foreach (var addr in viaAddrs)
-                    {
-                        if (!string.IsNullOrWhiteSpace(addr))
-                        {
-                            var p = await GetLocationByAddressAsync(addr);
-                            if (p != null) viaLocs.Add(p);
-                        }
-                    }
-
-                    // 2. 将所有点连成一个序列: Start -> Via1 -> Via2 -> End
-                    var sequence = new List<GeoPoint> { startLoc };
-                    sequence.AddRange(viaLocs);
-                    sequence.Add(endLoc);
-
-                    // 3. 结果容器
-                    var finalResult = new RouteResult();
-
-                    // 累计总时间和距离
-                    double totalSeconds = 0;
-                    double totalMeters = 0;
-
-                    // 4. 分段请求 (Step-by-Step Request)
-                    // 例如 A->B->C，我们先请求 A->B，再请求 B->C
-                    for (int i = 0; i < sequence.Count - 1; i++)
-                    {
-                        var p1 = sequence[i];
-                        var p2 = sequence[i + 1];
-
-                        // 这里的 RequestDrivingRouteAsync 只请求两个点，不带 waypoints
-                        var segmentResult = await RequestDrivingRouteAsync(p1, p2, null);
-
-                        if (segmentResult != null)
-                        {
-                            // 累加所有的坐标点
-                            finalResult.Points.AddRange(segmentResult.Points);
-
-                            // 解析这一段的时间和距离，存入 SegmentDetails
-                            // 格式： "20 分钟|5.5 公里" (用 | 分隔方便后续拆分)
-                            string segDuration = segmentResult.DurationText; // 例如 "15 分钟"
-                            string segDistance = segmentResult.DistanceText; // 例如 "3.2 公里"
-
-                            // 我们在 RouteResult 里加一个列表来存每段的详情
-                            finalResult.SegmentDetails.Add($"{segDuration}|{segDistance}");
-
-                            // 累加总数值 (为了重新计算总和)
-                            totalSeconds += ParseDurationToSeconds(segmentResult.DurationText);
-                            totalMeters += ParseDistanceToMeters(segmentResult.DistanceText);
-                        }
-                    }
-
-                    // 5. 重新格式化总时间和总距离
-                    finalResult.DurationText = totalSeconds < 60 ? "< 1分钟" : $"{totalSeconds / 60:F0} 分钟";
-                    finalResult.DistanceText = totalMeters >= 1000 ? $"{totalMeters / 1000:F1} 公里" : $"{totalMeters:F0} 米";
-
-                    return finalResult;
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"流程出错: {ex.Message}");
-                    return null;
-                }
-            }
-
-            // 辅助：解析 "15 分钟" -> 900
-            private double ParseDurationToSeconds(string text)
-            {
-                try
-                {
-                    string num = System.Text.RegularExpressions.Regex.Replace(text, "[^0-9]", "");
-                    if (int.TryParse(num, out int val)) return val * 60;
-                }
-                catch { }
-                return 0;
-            }
-
-            // 辅助：解析 "3.5 公里" -> 3500
-            private double ParseDistanceToMeters(string text)
-            {
-                try
-                {
-                    if (text.Contains("公里"))
-                    {
-                        string num = text.Replace(" 公里", "").Replace("公里", "");
-                        if (double.TryParse(num, out double val)) return val * 1000;
-                    }
-                    else // 米
-                    {
-                        string num = text.Replace(" 米", "").Replace("米", "");
-                        if (double.TryParse(num, out double val)) return val;
-                    }
-                }
-                catch { }
-                return 0;
-            }
-
-            // 地址解析 (保留之前的稳健逻辑)
-            private async Task<GeoPoint> GetLocationByAddressAsync(string keyword)
-            {
-                try
-                {
-                    // 注意 URL 变了：从 geocode/geo 变成了 place/text
-                    // 强制指定 city=南京，搜索更精准
-                    string url = $"https://restapi.amap.com/v3/place/text?keywords={keyword}&city=南京&output=JSON&key={ApiKey}";
-
-                    var json = await _httpClient.GetStringAsync(url);
-
-                    using (JsonDocument doc = JsonDocument.Parse(json))
-                    {
-                        var root = doc.RootElement;
-                        if (root.TryGetProperty("status", out var status) && status.GetString() == "1")
-                        {
-                            // 这里变了：检查 "pois" 数组，而不是 "geocodes"
-                            if (root.TryGetProperty("pois", out var pois) && pois.GetArrayLength() > 0)
-                            {
-                                var firstPoi = pois[0]; // 取第一个结果
-
-                                // 获取 location 字段
-                                if (firstPoi.TryGetProperty("location", out var locProp))
-                                {
-                                    // 格式依然是 "经度,纬度"
-                                    string locStr = locProp.GetString();
-                                    if (!string.IsNullOrEmpty(locStr)) // 有时候可能是空的数组，加个判断
-                                    {
-                                        var parts = locStr.Split(',');
-                                        if (parts.Length == 2)
-                                        {
-                                            double lon = double.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture);
-                                            double lat = double.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture);
-                                            return new GeoPoint(lon, lat);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                catch { }
-                return null;
-            }
-
-            // 路径规划 (增加 waypoints 参数)
-            // 求路径（核心修改：获取 duration 和 distance）
-            private async Task<RouteResult> RequestDrivingRouteAsync(GeoPoint start, GeoPoint end, string waypoints)
-            {
-                var result = new RouteResult();
-                try
-                {
-                    // ... 原来的 URL 构建 ...
-                    string url = $"https://restapi.amap.com/v3/direction/driving?origin={start.Longitude:F6},{start.Latitude:F6}&destination={end.Longitude:F6},{end.Latitude:F6}&extensions=base&strategy=0&key={ApiKey}";
-                    if (!string.IsNullOrEmpty(waypoints)) url += $"&waypoints={waypoints}";
-
-                    var json = await _httpClient.GetStringAsync(url);
-                    using (JsonDocument doc = JsonDocument.Parse(json))
-                    {
-                        var root = doc.RootElement;
-                        if (root.TryGetProperty("status", out var status) && status.GetString() == "1")
-                        {
-                            if (root.TryGetProperty("route", out var route) && route.TryGetProperty("paths", out var paths))
-                            {
-                                if (paths.GetArrayLength() > 0)
-                                {
-                                    var path = paths[0];
-
-                                    // 1. 获取时间
-                                    if (path.TryGetProperty("duration", out var durProp))
-                                    {
-                                        int seconds = int.Parse(durProp.GetString());
-                                        result.DurationText = seconds < 60 ? "< 1分钟" : $"{seconds / 60} 分钟";
-                                    }
-                                    // 2. 获取距离
-                                    if (path.TryGetProperty("distance", out var distProp))
-                                    {
-                                        double meters = double.Parse(distProp.GetString());
-                                        result.DistanceText = meters >= 1000 ? $"{meters / 1000.0:F1} 公里" : $"{meters} 米";
-                                    }
-                                    // 3. 获取路线点
-                                    if (path.TryGetProperty("steps", out var steps))
-                                    {
-                                        foreach (var step in steps.EnumerateArray())
-                                        {
-                                            if (step.TryGetProperty("polyline", out var polyline))
-                                            {
-                                                var pointArr = polyline.GetString().Split(';');
-                                                foreach (var p in pointArr)
-                                                {
-                                                    var xy = p.Split(',');
-                                                    if (xy.Length == 2)
-                                                        result.Points.Add(new GeoPoint(
-                                                            double.Parse(xy[0], System.Globalization.CultureInfo.InvariantCulture),
-                                                            double.Parse(xy[1], System.Globalization.CultureInfo.InvariantCulture)));
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                catch { }
-                return result;
-            }
-
-        }
-        // 用于显示历史记录的数据模型
-        // 放在 MainWindow.xaml.cs 底部或单独文件
-        public class RouteRecordItem
-        {
-            // 总览信息
-            public string SummaryText { get; set; } // 例如 "总共 45分钟 | 20公里"
-
-            // 路段集合：每一段都是一个 Start -> End 的小结构
-            public List<RouteSegment> Segments { get; set; } = new List<RouteSegment>();
-        }
-
-        public class RouteSegment
-        {
-            public string From { get; set; }  // 本段起点
-            public string To { get; set; }    // 本段终点
-            public string Detail { get; set; } // 本段详情 (因为API可能只给总时间，这里暂时显示为"下一站")
-
-            // 用于界面显示的图标颜色逻辑
-            public string IconColor => "Green";
-        }
-        public class RouteResult
-        {
-            public List<GeoPoint> Points { get; set; } = new List<GeoPoint>();
-            public string DurationText { get; set; } = "";
-            public string DistanceText { get; set; } = "";
-
-            // 新增：存每段的原始数据
-            public List<string> SegmentDetails { get; set; } = new List<string>();
-        }
-        // 数据模型类
-        public class GeoPoint
-        {
-            public double Longitude { get; set; }
-            public double Latitude { get; set; }
-            public GeoPoint(double lon, double lat) { Longitude = lon; Latitude = lat; }
-        }
-        // 查看所有推荐
-        private void ViewAllRecommendations_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("查看所有推荐功能待开发\n\n" +
-                           "将显示所有主题和季节的推荐汇总，\n" +
-                           "包含景点分布图和详细路线规划。",
-                           "所有推荐",
-                           MessageBoxButton.OK,
-                           MessageBoxImage.Information);
         }
     }
 }

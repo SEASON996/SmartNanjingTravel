@@ -6,7 +6,6 @@ using Esri.ArcGISRuntime.Symbology;
 using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.UI.Controls;
 using Microsoft.Data.Sqlite;
-using SmartNanjingTravel.Data;
 using SmartNanjingTravel.Models.Amap;
 using System;
 using System.Collections.Generic;

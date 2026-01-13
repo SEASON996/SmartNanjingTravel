@@ -29,56 +29,6 @@ namespace SmartNanjingTravel.Services
             // 移动地理数据库文件路径
             _geodatabasePath = System.IO.Path.Combine(dataDirectory, "Travel.geodatabase");
         }
-
-        // 获取所有可用的路线名称
-
-/*        public async Task<List<string>> GetAvailableRouteNames(string gdbPath)
-        {
-            var routeNames = new List<string>();
-
-            try
-            {
-                if (!File.Exists(gdbPath))
-                {
-                    return routeNames;
-                }
-
-                _geodatabase = await Geodatabase.OpenAsync(gdbPath);
-
-                if (_geodatabase == null)
-                {
-                    return routeNames;
-                }
-
-                // 找出所有以_points结尾的表，提取路线名称
-                foreach (var table in _geodatabase.GeodatabaseFeatureTables)
-                {
-                    string tableName = table.TableName ?? "";
-                    if (tableName.EndsWith("_points", StringComparison.OrdinalIgnoreCase))
-                    {
-                        string routeName = tableName.Substring(0, tableName.Length - "_points".Length);
-*//*                        // 移除可能的"main."前缀
-                        if (routeName.StartsWith("main."))
-                            routeName = routeName.Substring(5);*//*
-                        routeNames.Add(routeName);
-                    }
-                }
-
-                return routeNames.Distinct().ToList();
-            }*/
-
-/*            catch (Exception ex)
-            {
-                Console.WriteLine($"获取路线名称失败: {ex.Message}");
-                return routeNames;
-            }
-
-            finally
-            {
-                Close();
-            }
-        }*/
-
         public async Task<RouteLayers> LoadRouteLayers(string routeName)
         {
             var result = new RouteLayers { RouteName = routeName };
@@ -159,6 +109,7 @@ namespace SmartNanjingTravel.Services
 
         public FeatureLayer PointLayer { get; set; }
         public FeatureLayer RouteLayer { get; set; }
+
 
         public List<Layer> GetAllLayers()
         {

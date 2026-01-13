@@ -85,7 +85,7 @@
                         Click="HomeButton_Click">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Home" Width="20" Height="20" Margin="0,0,10,0"/>
-                    <TextBlock x:Name="HomeButtonText" Text="景区总览"/>
+                    <TextBlock x:Name="HomeButtonText" Text="景点总览"/>
                 </StackPanel>
             </Button>
 
@@ -123,12 +123,12 @@
         <StackPanel Grid.Row="7" Margin="1,0,1,20">
             <Separator Style="{StaticResource MaterialDesignSeparator}" Margin="0,0,0,15"/>
             <Button Style="{StaticResource SidebarButton}" 
-                    ToolTip="景区评分统计"
+                    ToolTip="景区信息统计"
                     x:Name="RatingStatisticsButton"
                     Click="RatingStatisticsButton_Click">
                 <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="ChartBar" Width="20" Height="20" Margin="0,0,4,0"/>
-                    <TextBlock Text="景区评分统计"/>
+                        <TextBlock Text="景区信息统计"/>
                 </StackPanel>
             </Button>
         </StackPanel>
@@ -165,16 +165,16 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBox x:Name="SearchTextBox"
-                                     Text="{Binding InputAddress, UpdateSourceTrigger=PropertyChanged}" 
-                                     Grid.Column="0"
-                                     Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                     materialDesign:HintAssist.Hint="搜索景点名称"
-                                     FontSize="14"
-                                     Height="45"
-                                     VerticalContentAlignment="Center"
-                                     Margin="0,0,10,0"
-                                     Padding="15,0,10,0"
-                                     BorderThickness="0">
+                                 Text="{Binding InputAddress, UpdateSourceTrigger=PropertyChanged}" 
+                                 Grid.Column="0"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                 materialDesign:HintAssist.Hint="搜索景点名称"
+                                 FontSize="14"
+                                 Height="45"
+                                 VerticalContentAlignment="Center"
+                                 Margin="0,0,10,0"
+                                 Padding="15,0,10,0"
+                                 BorderThickness="0">
                             <TextBox.InputBindings>
                                 <KeyBinding Key="Enter" 
                     Command="{Binding SearchCommand}" 
@@ -703,15 +703,16 @@
                                                         <!-- 评分 -->
                                                         <StackPanel Orientation="Horizontal">
                                                             <materialDesign:PackIcon Kind="Star" 
-                                                                                         Width="12" 
-                                                                                         Height="12"
-                                                                                         Margin="0,0,2,0"
-                                                                                         VerticalAlignment="Center"
-                                                                                         Foreground="#FF9800"/>
+                                                                                     Width="12" 
+                                                                                     Height="12"
+                                                                                     Margin="0,0,2,0"
+                                                                                     VerticalAlignment="Center"
+                                                                                     Foreground="#FF9800"/>
                                                             <TextBlock 
-                                                                           FontSize="11"
-                                                                           FontWeight="Medium"
-                                                                           Foreground="#FF9800"/>
+                                                                Text="{Binding DisplayRating}"
+                                                                FontSize="11"
+                                                                FontWeight="Medium"
+                                                                Foreground="#FF9800"/>
                                                         </StackPanel>
                                                     </WrapPanel>
                                                 </StackPanel>
@@ -913,12 +914,12 @@
                                                     <Border Background="{TemplateBinding Background}"/>
                                                     <Border Background="#99000000" VerticalAlignment="Bottom" Height="60"/>
                                                     <TextBlock Text="民国风情之旅"
-                                       FontSize="18"
-                                       FontWeight="SemiBold"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Bottom"
-                                       Margin="0,0,0,15"/>
+                                                               FontSize="18"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="White"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Bottom"
+                                                               Margin="0,0,0,15"/>
                                                 </Grid>
                                             </ControlTemplate>
                                         </Button.Template>
@@ -931,7 +932,7 @@
                                         Height="220">
                                         <Button.Background>
                                             <ImageBrush ImageSource="https://imgs.699pic.com/images/501/675/151.jpg!detail.v1"
-                                Stretch="UniformToFill"/>
+                                                        Stretch="UniformToFill"/>
                                         </Button.Background>
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -957,7 +958,7 @@
                                         Height="220">
                                         <Button.Background>
                                             <ImageBrush ImageSource="https://bpic.588ku.com/back_origin_min_pic/23/04/19/bd10c5645041f4718a049526c87c83d3.jpg"
-                                Stretch="UniformToFill"/>
+                                                        Stretch="UniformToFill"/>
                                         </Button.Background>
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -1018,7 +1019,7 @@
                                         Height="220">
                                         <Button.Background>
                                             <ImageBrush ImageSource="https://imgs.699pic.com/images/501/747/842.jpg!list1x.v2"
-                                Stretch="UniformToFill"/>
+                                                        Stretch="UniformToFill"/>
                                         </Button.Background>
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -1026,12 +1027,12 @@
                                                     <Border Background="{TemplateBinding Background}"/>
                                                     <Border Background="#99000000" VerticalAlignment="Bottom" Height="60"/>
                                                     <TextBlock Text="春游南京"
-                                       FontSize="18"
-                                       FontWeight="SemiBold"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Bottom"
-                                       Margin="0,0,0,15"/>
+                                                               FontSize="18"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="White"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Bottom"
+                                                               Margin="0,0,0,15"/>
                                                 </Grid>
                                             </ControlTemplate>
                                         </Button.Template>
@@ -1039,12 +1040,12 @@
 
                                     <!-- 夏游南京 -->
                                     <Button x:Name="SummerButton"
-                    Click="SeasonButton_Click"
-                    Margin="8"
-                    Height="220">
+                                            Click="SeasonButton_Click"
+                                            Margin="8"
+                                            Height="220">
                                         <Button.Background>
                                             <ImageBrush ImageSource="https://pic.nximg.cn/file/20150428/9129085_154129797000_2.jpg"
-                                Stretch="UniformToFill"/>
+                                                        Stretch="UniformToFill"/>
                                         </Button.Background>
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
@@ -1052,12 +1053,12 @@
                                                     <Border Background="{TemplateBinding Background}"/>
                                                     <Border Background="#99000000" VerticalAlignment="Bottom" Height="60"/>
                                                     <TextBlock Text="夏游南京"
-                                       FontSize="18"
-                                       FontWeight="SemiBold"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Bottom"
-                                       Margin="0,0,0,15"/>
+                                                               FontSize="18"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="White"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Bottom"
+                                                               Margin="0,0,0,15"/>
                                                 </Grid>
                                             </ControlTemplate>
                                         </Button.Template>
@@ -1065,9 +1066,9 @@
 
                                     <!-- 秋游南京 -->
                                     <Button x:Name="AutumnButton"
-                    Click="SeasonButton_Click"
-                    Margin="8"
-                    Height="220">
+                                            Click="SeasonButton_Click"
+                                            Margin="8"
+                                            Height="220">
                                         <Button.Background>
                                             <ImageBrush ImageSource="https://pic.nximg.cn/file/20220915/2572038_082921339102_2.jpg"
                                 Stretch="UniformToFill"/>
@@ -1078,12 +1079,12 @@
                                                     <Border Background="{TemplateBinding Background}"/>
                                                     <Border Background="#99000000" VerticalAlignment="Bottom" Height="60"/>
                                                     <TextBlock Text="秋游南京"
-                                       FontSize="18"
-                                       FontWeight="SemiBold"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Bottom"
-                                       Margin="0,0,0,15"/>
+                                                               FontSize="18"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="White"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Bottom"
+                                                               Margin="0,0,0,15"/>
                                                 </Grid>
                                             </ControlTemplate>
                                         </Button.Template>
@@ -1142,7 +1143,7 @@
                 </Border>
                 <!-- 评分统计面板（默认折叠） -->
                 <Border x:Name="RatingStatisticsPanel"
-                        Width="450"
+                        Width="480"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Top"
                         Margin="20,20,0,90"
@@ -1164,7 +1165,8 @@
                         <Border Grid.Row="0" 
                                 Background="{DynamicResource MaterialDesign.Brush}"
                                 CornerRadius="8,8,0,0"
-                                Padding="15,12">
+                                Padding="15,12"
+>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -1172,35 +1174,36 @@
                                 </Grid.ColumnDefinitions>
 
                                 <TextBlock Grid.Column="0" 
-                                           Text="评分统计分析" 
+                                           Text="景区统计分析" 
                                            FontSize="16" 
                                            FontWeight="Bold"
                                            Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
                                            VerticalAlignment="Center"/>
 
                                 <Button Grid.Column="1"
-                        Style="{StaticResource MaterialDesignIconButton}"
-                        Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
-                        Click="CloseRatingStatisticsPanel_Click"
-                        ToolTip="关闭">
+                                        Style="{StaticResource MaterialDesignIconButton}"
+                                        Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                                        Click="CloseRatingStatisticsPanel_Click"
+                                        ToolTip="关闭">
                                     <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
                                 </Button>
                             </Grid>
                         </Border>
 
-                        <!-- 评分统计内容 -->
+                        <!-- 统计内容 -->
                         <ScrollViewer Grid.Row="1"
                                        VerticalScrollBarVisibility="Auto"
-                                      Padding="15,20,15,20"
-                                      Margin="10">
+                                      Padding="10"
+>
                             <StackPanel>
                                 <!-- 总体统计 -->
                                 <Border Style="{StaticResource RoutePointItem}"
                                         Background="#F9F9F9"    
                                         Padding="15,20,15,20"
-                                        >
+                                        Margin="8">
+                                        
                                     <StackPanel>
-                                        <TextBlock Text="总体统计"
+                                        <TextBlock Text="评分总体统计"
                                                    FontSize="16"
                                                    FontWeight="SemiBold"
                                                    Margin="0,0,0,10"/>
@@ -1220,37 +1223,37 @@
                                             <!-- 平均评分 -->
                                             <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,8">
                                                 <TextBlock Text="平均评分" 
-                                           FontSize="12"
-                                           FontWeight="SemiBold"/>
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold"/>
                                                 <TextBlock x:Name="AverageRatingText"
-                                           Text="4.2"
-                                           FontSize="18"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                                           Text="4.2"
+                                                           FontSize="18"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
                                             </StackPanel>
 
                                             <!-- POI总数 -->
                                             <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,8">
-                                                <TextBlock Text="POI总数" 
-                                           FontSize="12"
-                                           FontWeight="SemiBold"/>
+                                                <TextBlock Text="景点总数" 
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold"/>
                                                 <TextBlock x:Name="TotalPoiText"
-                                           Text="156"
-                                           FontSize="18"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                                           Text="156"
+                                                           FontSize="18"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
                                             </StackPanel>
 
                                             <!-- 最高评分 -->
                                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,8">
                                                 <TextBlock Text="最高评分" 
-                                           FontSize="12"
-                                           FontWeight="SemiBold"/>
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold"/>
                                                 <TextBlock x:Name="MaxRatingText"
-                                           Text="5.0"
-                                           FontSize="18"
-                                           FontWeight="Bold"
-                                           Foreground="#FF9800"/>
+                                                           Text="5.0"
+                                                           FontSize="18"
+                                                           FontWeight="Bold"
+                                                           Foreground="#FF9800"/>
                                             </StackPanel>
 
                                             <!-- 最低评分 -->
@@ -1271,45 +1274,45 @@
                                 <!-- 评分分布柱状图 -->
                                 <Border Style="{StaticResource RoutePointItem}"
                                         Background="#F9F9F9"
-                                        Margin="0,0,0,15"
-                                        Padding="15">
+                                        Padding="15,20,15,20"
+                                        Margin="8">
                                     <StackPanel>
                                         <TextBlock Text="评分分布"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,0,15"/>
+                                                   FontSize="16"
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,0,0,15"/>
 
                                         <!-- OxyPlot 图表区域 -->
                                         <oxy:PlotView x:Name="RatingDistributionChart"
-                                      Height="200"
-                                      Margin="0,10,0,0"/>
+                                                      Height="220"
+                                                      Margin="0,10,0,0"/>
                                     </StackPanel>
                                 </Border>
 
-                                <!-- 行政区评分排名 -->
                                 <Border Style="{StaticResource RoutePointItem}"
                                         Background="#F9F9F9"
-                                        Padding="15">
+                                        Padding="15,20,15,20"
+                                        Margin="8">
                                     <StackPanel>
-                                        <TextBlock Text="行政区评分排名"
+                                        <TextBlock Text="景点行政区分布"
                                                    FontSize="16"
                                                    FontWeight="SemiBold"
                                                    Margin="0,0,0,10"/>
 
                                         <!-- OxyPlot 饼图 -->
                                         <oxy:PlotView x:Name="DistrictRatingChart"
-                                      Height="200"
-                                      Margin="0,10,0,0"/>
+                                                      Height="220"
+                                                      Margin="0,10,0,0"/>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
                         </ScrollViewer>
 
-                        <!-- 底部操作按钮 -->
                         <Border Grid.Row="2" 
-                Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
-                CornerRadius="0,0,8,8"
-                Padding="15,12">
+                                Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
+                                CornerRadius="0,0,8,8"
+                                Margin="0, 4, 10, 4"
+                                Padding="15,12">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -1318,18 +1321,25 @@
 
                                 <!-- 统计说明 -->
                                 <TextBlock Grid.Column="0"
-                           Text="基于已加载的POI数据进行评分统计分析"
-                           FontSize="12"
-                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
-                           VerticalAlignment="Center"
-                           TextWrapping="Wrap"/>
+                                           Text="基于已加载的POI数据进行评分统计分析"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                           VerticalAlignment="Center"
+                                           TextWrapping="Wrap"/>
 
                                 <!-- 刷新按钮 -->
                                 <Button Grid.Column="1"
-                        x:Name="RefreshStatisticsButton"
-                        Style="{StaticResource MaterialDesignOutlinedButton}"
-                        Content="刷新数据"
-                        Click="RefreshStatisticsButton_Click"/>
+                                        x:Name="RefreshStatisticsButton"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Click="RefreshStatisticsButton_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Refresh" 
+                                                                 Width="18" 
+                                                                 Height="18" 
+                                                                 Margin="0,0,8,0"/>
+                                        <TextBlock Text="刷新数据"/>
+                                    </StackPanel>
+                                </Button>
                             </Grid>
                         </Border>
                     </Grid>

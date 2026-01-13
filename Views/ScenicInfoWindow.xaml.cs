@@ -20,14 +20,6 @@ namespace SmartNanjingTravel
         {
             InitializeComponent();
 
-            // 设计器模式填充测试数据
-            if (DesignerProperties.GetIsInDesignMode(this))
-            {
-                TxtName.Text = "中山陵";
-                TxtRating.Text = "评分：5.0";
-                TxtDistrict.Text = "行政区：玄武区";
-                TxtOpenTime.Text = "08:30-17:00（周一闭馆）";
-            }
         }
 
         // 带参数的构造函数（修复递归调用）

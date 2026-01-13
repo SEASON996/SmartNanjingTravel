@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Windows;
+using System.Diagnostics;
 
 
 namespace SmartNanjingTravel.Services
@@ -18,18 +19,33 @@ namespace SmartNanjingTravel.Services
         /// 初始化数据库
         public FavoriteService()
         {
-            // 获取当前程序集所在目录
-            string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            string dataDirectory = Path.Combine(baseDirectory, "Data");
+            try
+            {
+                // 使用用户的应用程序数据目录
+                string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string appFolder = Path.Combine(appDataPath, "SmartNanjingTravel");
+                string dataDirectory = Path.Combine(appFolder, "Data");
 
-            // 数据库文件路径
-            _databasePath = Path.Combine(dataDirectory, "Travel.db");
+                // 确保目录存在
+                if (!Directory.Exists(dataDirectory))
+                {
+                    Directory.CreateDirectory(dataDirectory);
+                }
+
+                _databasePath = Path.Combine(dataDirectory, "Travel.db");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"初始化路径失败: {ex.Message}");
+                MessageBox.Show($"初始化数据库路径失败: {ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
+        
         public void InitializeDatabase()
         {
             try
             {
-
                 using (var connection = new SqliteConnection($"Data Source={_databasePath}"))
                 {
                     connection.Open();
@@ -73,6 +89,9 @@ namespace SmartNanjingTravel.Services
         /// <summary>
         /// 添加收藏
         /// </summary>
+        /// <summary>
+        /// 添加收藏
+        /// </summary>
         public bool AddFavorite(FavoriteItem favorite)
         {
             try
@@ -84,10 +103,10 @@ namespace SmartNanjingTravel.Services
                     using (var command = connection.CreateCommand())
                     {
                         command.CommandText = @"
-                    INSERT OR REPLACE INTO USER_FAVORITES 
-                    (USER_ID, POI_ID, POI_NAME, DISTRICT, ADDRESS, 
-                     LATITUDE, LONGITUDE, RATING, OPEN_TIME, PHOTOS, NOTES) 
-                    VALUES (@userId, @poiId, @poiName, @district, @address,
+                            INSERT OR REPLACE INTO USER_FAVORITES 
+                            (USER_ID, POI_ID, POI_NAME, DISTRICT, ADDRESS, 
+                             LATITUDE, LONGITUDE, RATING, OPEN_TIME, PHOTOS, NOTES) 
+                            VALUES (@userId, @poiId, @poiName, @district, @address,
                             @latitude, @longitude, @rating, @openTime, @photos, @notes)";
 
                         command.Parameters.AddWithValue("@userId", favorite.UserId);
@@ -102,12 +121,16 @@ namespace SmartNanjingTravel.Services
                         command.Parameters.AddWithValue("@photos", favorite.Photos ?? "");
                         command.Parameters.AddWithValue("@notes", favorite.Notes ?? "");
 
-                        return command.ExecuteNonQuery() > 0;
+                        int rowsAffected = command.ExecuteNonQuery();
+                        Console.WriteLine($"执行完成，影响行数：{rowsAffected}");
+
+                        return rowsAffected > 0;
                     }
                 }
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"收藏失败异常：{ex.Message}");
                 MessageBox.Show($"收藏失败: {ex.Message}", "错误",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
@@ -159,12 +182,12 @@ namespace SmartNanjingTravel.Services
                     using (var command = connection.CreateCommand())
                     {
                         command.CommandText = @"
-                    SELECT 
-                        FAV_ID, USER_ID, POI_ID, POI_NAME, DISTRICT, ADDRESS,
-                        LATITUDE, LONGITUDE, RATING, OPEN_TIME, PHOTOS, NOTES, FAV_TIME
-                    FROM USER_FAVORITES 
-                    WHERE USER_ID = @userId 
-                    ORDER BY FAV_TIME DESC";
+                            SELECT 
+                                FAV_ID, USER_ID, POI_ID, POI_NAME, DISTRICT, ADDRESS,
+                                LATITUDE, LONGITUDE, RATING, OPEN_TIME, PHOTOS, NOTES, FAV_TIME
+                            FROM USER_FAVORITES 
+                            WHERE USER_ID = @userId 
+                            ORDER BY FAV_TIME DESC";
 
                         command.Parameters.AddWithValue("@userId", userId);
 
