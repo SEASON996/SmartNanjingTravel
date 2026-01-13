@@ -666,9 +666,6 @@ namespace SmartNanjingTravel
                             _allFavorites.RemoveAll(f => f.FavoriteId == favorite.FavoriteId);
                             _favoriteItems.Remove(favorite);
 
-                            MessageBox.Show("删除成功", "提示",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
-
                             UpdateFavoritesCount();
                             ShowEmptyStateIfNeeded();
                         }

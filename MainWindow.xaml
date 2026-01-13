@@ -1197,7 +1197,8 @@
                                 <!-- 总体统计 -->
                                 <Border Style="{StaticResource RoutePointItem}"
                                         Background="#F9F9F9"    
-                                        Padding="15,20,15,20">
+                                        Padding="15,20,15,20"
+                                        >
                                     <StackPanel>
                                         <TextBlock Text="总体统计"
                                                    FontSize="16"

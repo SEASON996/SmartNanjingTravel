@@ -165,52 +165,5 @@ namespace SmartNanjingTravel.Models.Amap
 
             return allResults;
         }
-
-        private List<AddressInfo> ConvertPoisToAddressInfo(List<PoiItem> pois, string originalQuery)
-        {
-            var addressInfoList = new List<AddressInfo>();
-
-            foreach (var item in pois)
-            {
-                var location = string.IsNullOrEmpty(item.Location) ?
-                    new string[] { "无", "无" } : item.Location.Split(',');
-
-                var longitude = location.Length >= 1 ? location[0] : "无";
-                var latitude = location.Length >= 2 ? location[1] : "无";
-                var adname = string.IsNullOrEmpty(item.Adname) ? "无" : item.Adname;
-
-                var rating = "暂无评分";
-                if (item.BizExt != null && !string.IsNullOrEmpty(item.BizExt.Rating))
-                {
-                    rating = item.BizExt.Rating;
-                }
-
-                var opentime = "暂无";
-                if (item.BizExt != null && item.BizExt.OpenTime != null)
-                {
-                    opentime = item.BizExt.OpenTime.ToString() ?? "暂无";
-                }
-
-                var photos = "暂无照片";
-                if (item.Photos != null && item.Photos.Count > 0)
-                {
-                    photos = item.Photos[0].Url ?? "暂无照片";
-                }
-
-                addressInfoList.Add(new AddressInfo
-                {
-                    Address = originalQuery,
-                    Longitude = longitude,
-                    Latitude = latitude,
-                    Adname = adname,
-                    Rating = rating,
-                    Name = item.Name ?? "无",
-                    Opentime = opentime,
-                    Photos = photos
-                });
-            }
-
-            return addressInfoList;
-        }
     }
 }
