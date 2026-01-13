@@ -435,36 +435,133 @@
 
                         </StackPanel>
                     </ScrollViewer>
+                        <!-- 底部操作按钮 -->
+                        <Border Grid.Row="2"
+        Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
+        CornerRadius="0,0,8,8"
+        Padding="15,12">
+                            <StackPanel Orientation="Vertical" 
+                HorizontalAlignment="Right" 
+                VerticalAlignment="Top" 
+                Margin="0,10,10,0">
 
-                    <!-- 底部操作按钮 -->
-                    <Border Grid.Row="2" 
-                                Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
-                                CornerRadius="0,0,8,8"
-                                Padding="15,12">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <Button x:Name="ClearRouteButton"
-                                        Style="{StaticResource MaterialDesignOutlinedButton}"
-                                        Content="清空"
-                                        Margin="0,0,10,0"
-                                        Click="ClearRouteButton_Click"/>
-                            <Button x:Name="SearchRouteButton"
-                                        Style="{StaticResource MaterialDesignRaisedButton}"
-                                        Content="开始导航"
-                                        Click="SearchRouteButton_Click">
-                                <Button.ContentTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="Navigation" 
-                                                                         Width="18" 
-                                                                         Height="18" 
-                                                                         Margin="0,0,8,0"/>
-                                                <TextBlock Text="{Binding}"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </Button.ContentTemplate>
-                                </Button>
+                                <!-- 第一行：按钮区域 -->
+                                <StackPanel Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Margin="0,0,0,10">
+                                    <Button x:Name="ClearRouteButton"
+                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                    Content="清空"
+                    Margin="0,0,10,0"
+                    Click="ClearRouteButton_Click"/>
+
+                                    <Button x:Name="SearchRouteButton"
+                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    Content="开始导航"
+                    Click="SearchRouteButton_Click">
+                                        <Button.ContentTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="Navigation" 
+                                                     Width="18" 
+                                                     Height="18" 
+                                                     Margin="0,0,8,0"/>
+                                                    <TextBlock Text="{Binding}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </Button.ContentTemplate>
+                                    </Button>
+                                </StackPanel>
+
+                                <!-- 导航历史列表区域 -->
+                                <StackPanel Orientation="Horizontal" 
+                    HorizontalAlignment="Right" 
+                    Margin="0,0,0,10">
+                                    <ListBox x:Name="RouteHistoryList" 
+                     BorderThickness="0" 
+                     Background="Transparent"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     MaxHeight="400">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="ListBoxItem">
+                                                <Setter Property="Padding" Value="0"/>
+                                                <Setter Property="Margin" Value="0,0,0,5"/>
+                                                <Setter Property="Focusable" Value="False"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ListBoxItem">
+                                                            <ContentPresenter/>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <!-- 外层卡片：自定义四周阴影 -->
+                                                <Border Background="White" CornerRadius="8" Padding="15" Margin="4,4,4,12" Width="320">
+                                                    <Border.Effect>
+                                                        <!-- ShadowDepth=0 配合 BlurRadius 可以实现四周均匀发光/阴影效果 -->
+                                                        <DropShadowEffect Color="Gray" Direction="0" ShadowDepth="0" BlurRadius="10" Opacity="0.3"/>
+                                                    </Border.Effect>
+
+                                                    <StackPanel>
+                                                        <!-- 顶部：总计信息 (总时间 | 总距离) -->
+                                                        <Border Background="#F3E5F5" CornerRadius="6" Padding="10,6" Margin="0,0,0,15">
+                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                <materialDesign:PackIcon Kind="ClockTimeFourOutline" Foreground="#673AB7" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                                                <TextBlock Text="{Binding SummaryText}" 
+                                   Foreground="#673AB7" 
+                                   FontWeight="Bold" 
+                                   FontSize="15"
+                                   VerticalAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </Border>
+
+                                                        <!-- 中间：分段列表 -->
+                                                        <ItemsControl ItemsSource="{Binding Segments}">
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Grid Margin="0,0,0,15">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="Auto" MinWidth="70"/>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto" MinWidth="70"/>
+                                                                        </Grid.ColumnDefinitions>
+
+                                                                        <!-- 左：起点 -->
+                                                                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                                            <materialDesign:PackIcon Kind="MapMarker" Foreground="Green" Width="20" Height="20" HorizontalAlignment="Center"/>
+                                                                            <TextBlock Text="{Binding From}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="75" ToolTip="{Binding From}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                                                        </StackPanel>
+
+                                                                        <!-- 中：箭头和时间 -->
+                                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="5,0">
+                                                                            <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="#673AB7" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                                                            <materialDesign:PackIcon Kind="ArrowRight" Width="24" Height="24" Foreground="#E0E0E0" HorizontalAlignment="Center"/>
+                                                                        </StackPanel>
+
+                                                                        <!-- 右：终点 -->
+                                                                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                                            <materialDesign:PackIcon Kind="MapMarker" Foreground="Red" Width="20" Height="20" HorizontalAlignment="Center"/>
+                                                                            <TextBlock Text="{Binding To}" FontSize="12" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="75" ToolTip="{Binding To}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                                                        </StackPanel>
+                                                                    </Grid>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </StackPanel>
+
                             </StackPanel>
                         </Border>
+
                     </Grid>
                 </Border>
                 
