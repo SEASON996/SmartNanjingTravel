@@ -192,11 +192,43 @@ namespace SmartNanjingTravel
             this.Close();
         }
 
-        // 去这里按钮事件
-        private void BtnGoHere_Click(object sender, RoutedEventArgs e)
+        // 导航到景点按钮事件（修改后的方法）
+        // 导航到景点按钮事件（修改后的方法）
+        private async void BtnGoHere_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show($"导航到 {_currentPoiName}\n经度: {_longitude:F6}, 纬度: {_latitude:F6}",
-                "导航", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                // 关闭当前窗口
+                this.Close();
+
+                // 获取主窗口实例
+                if (Application.Current.MainWindow is MainWindow mainWindow)
+                {
+                    // 创建地图点
+                    var mapPoint = new Esri.ArcGISRuntime.Geometry.MapPoint(
+                        _longitude,
+                        _latitude,
+                        Esri.ArcGISRuntime.Geometry.SpatialReferences.Wgs84
+                    );
+
+                    // 定位到景点位置，设置缩放级别为5000米（适当放大，能看到周围环境）
+                    await mainWindow.MyMapView.SetViewpointCenterAsync(mapPoint, 5000);
+
+                    // 在状态栏显示提示（可选）
+                    // 可以在这里添加一个简单的提示，但不是必需的
+                    // 或者可以设置一个文本提示，几秒后消失
+                }
+                else
+                {
+                    MessageBox.Show("无法获取主窗口实例", "错误",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"导航失败: {ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

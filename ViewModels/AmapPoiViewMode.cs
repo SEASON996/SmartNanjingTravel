@@ -177,17 +177,17 @@ namespace SmartNanjingTravel.ViewModels
 
             // --- 1. 定义 FeatureCollectionTable 的结构 (Schema) ---
             List<Field> fields = new List<Field>
-    {
-        new Field(FieldType.Text, "POI_ID", "景点ID", 100),
-        new Field(FieldType.Text, "Name", "名称", 100),
-        new Field(FieldType.Text, "Rating", "评分", 50),
-        new Field(FieldType.Text, "Adname", "行政区", 100),
-        new Field(FieldType.Text, "Opentime", "开门时间", 200),
-        new Field(FieldType.Text, "Address", "地址", 500),
-        new Field(FieldType.Text, "Photos", "图片", 255),
-        new Field(FieldType.Text, "Longitude", "经度", 50),
-        new Field(FieldType.Text, "Latitude", "纬度", 50)
-    };
+{
+    new Field(FieldType.Text, "POI_ID", "景点ID", 100),
+    new Field(FieldType.Text, "Name", "名称", 100),
+    new Field(FieldType.Text, "Rating", "评分", 50),
+    new Field(FieldType.Text, "Adname", "行政区", 100),
+    new Field(FieldType.Text, "Opentime", "开门时间", 200),
+    new Field(FieldType.Text, "Address", "地址", 500),
+    new Field(FieldType.Text, "Photos", "图片", 255),
+    new Field(FieldType.Text, "Longitude", "经度", 50),
+    new Field(FieldType.Text, "Latitude", "纬度", 50)
+};
 
             // 创建表，指定几何类型为点，坐标系为 WGS84
             var featureTable = new FeatureCollectionTable(fields, GeometryType.Point, SpatialReferences.Wgs84);
@@ -212,11 +212,29 @@ namespace SmartNanjingTravel.ViewModels
             // 准备一个集合，用于存储POI ID到AddressInfo的映射
             Dictionary<int, AddressInfo> poiIdMap = new Dictionary<int, AddressInfo>();
 
-            foreach (var info in AddressInfoList)
+            // 对景点按评分排序，优先显示高评分景点
+            var sortedAddressInfoList = AddressInfoList
+                .Where(info => !string.IsNullOrEmpty(info.Rating) && info.Rating != "暂无评分")
+                .OrderByDescending(info =>
+                {
+                    if (double.TryParse(info.Rating, out double rating))
+                        return rating;
+                    return 0.0;
+                })
+                .ToList();
+
+            // 如果没有评分数据，按默认顺序显示
+            if (sortedAddressInfoList.Count == 0)
+                sortedAddressInfoList = AddressInfoList.ToList();
+
+            foreach (var info in sortedAddressInfoList)
             {
                 if (!double.TryParse(info.Longitude, out double lon) || !double.TryParse(info.Latitude, out double lat))
-                    continue;
+                {
 
+                    continue;
+                }
+                //MessageBox.Show($"Invalid coords for {info.Name}: {info.Longitude},{info.Latitude}");
                 var point = new Esri.ArcGISRuntime.Geometry.MapPoint(lon, lat, SpatialReferences.Wgs84);
                 validPoints.Add(point);
 
@@ -279,33 +297,78 @@ namespace SmartNanjingTravel.ViewModels
             var subLayer = featureCollectionLayer.Layers.FirstOrDefault(l => l.FeatureTable == featureTable);
             if (subLayer != null)
             {
-                // 配置聚合
-                var fixedSizeSymbol = new Esri.ArcGISRuntime.Symbology.SimpleMarkerSymbol
+                // 使用自定义的聚合符号，大小固定
+                var clusterSymbol = new Esri.ArcGISRuntime.Symbology.SimpleMarkerSymbol
                 {
                     Style = SimpleMarkerSymbolStyle.Circle,
-                    Color =   System.Drawing.Color.FromArgb(200, 255, 128, 1),
-                    Size = 32,
-                    OffsetX = 0,
-                    OffsetY = 0,
-
+                    Color = System.Drawing.Color.FromArgb(180, 255, 128, 1), // 半透明的橙色
+                    Size = 40, // 固定大小
+                    Outline = new Esri.ArcGISRuntime.Symbology.SimpleLineSymbol
+                    {
+                        Style = SimpleLineSymbolStyle.Solid,
+                        Color = System.Drawing.Color.FromArgb(200, 255, 128, 1),
+                        Width = 2
+                    }
                 };
 
-                var clusterRenderer = new Esri.ArcGISRuntime.Symbology.SimpleRenderer(fixedSizeSymbol);
-                var clusterReduction = new Esri.ArcGISRuntime.Reduction.ClusteringFeatureReduction(clusterRenderer);
+                var clusterRenderer = new Esri.ArcGISRuntime.Symbology.SimpleRenderer(clusterSymbol);
 
-                // 配置聚合标签
+                // 创建聚合配置
+                var clusterReduction = new Esri.ArcGISRuntime.Reduction.ClusteringFeatureReduction(clusterRenderer)
+                {
+                    // 调整聚合参数
+                    Radius = 80, // 像素距离
+                    MinSymbolSize = 40, // 最小聚合符号大小（固定）
+                    MaxSymbolSize = 40  // 最大聚合符号大小（固定，与最小相同）
+                };
+
+                // 【修复1】使用正确的 TextSymbol 设置，移除 FontFamily 设置
                 var countTextSymbol = new Esri.ArcGISRuntime.Symbology.TextSymbol
                 {
-                    Color = System.Drawing.Color.FromArgb(255, 255, 128, 1),
-                    Size = 22,
+                    Color = System.Drawing.Color.White,
+                    Size = 16, // 稍微增大字体
                     FontWeight = Esri.ArcGISRuntime.Symbology.FontWeight.Bold,
-                    HaloColor = System.Drawing.Color.White,
+                    HaloColor = System.Drawing.Color.FromArgb(200, 0, 0, 0),
                     HaloWidth = 2,
+                    // 使用字符串形式的字体名称
+                    FontFamily = "Arial",
                     HorizontalAlignment = Esri.ArcGISRuntime.Symbology.HorizontalAlignment.Center,
+                    VerticalAlignment = Esri.ArcGISRuntime.Symbology.VerticalAlignment.Middle,
+                    OffsetY = 0, // 设置在中心
+                    OffsetX = 0  // 设置在中心
                 };
+
+                // 【修复2】使用正确的 LabelDefinition 引用
+                // 在 ArcGIS Runtime 中，LabelDefinition 通常在 Esri.ArcGISRuntime.Mapping 命名空间
                 var countLabelExpression = new Esri.ArcGISRuntime.Mapping.Labeling.SimpleLabelExpression("[cluster_count]");
                 var countLabelDef = new Esri.ArcGISRuntime.Mapping.LabelDefinition(countLabelExpression, countTextSymbol);
+
+                // 【修复3】使用反射来设置 Placement 属性
+                try
+                {
+                    // 获取 Placement 属性
+                    var placementProp = countLabelDef.GetType().GetProperty("Placement");
+                    if (placementProp != null)
+                    {
+                        // 查找 LabelPlacement 枚举
+                        var assembly = typeof(Esri.ArcGISRuntime.Mapping.LabelDefinition).Assembly;
+                        var labelPlacementType = assembly.GetTypes().FirstOrDefault(t => t.Name == "LabelPlacement");
+
+                        if (labelPlacementType != null && labelPlacementType.IsEnum)
+                        {
+                            // 尝试获取 PointCenterCenter 值
+                            var pointCenterCenterValue = Enum.Parse(labelPlacementType, "PointCenterCenter");
+                            placementProp.SetValue(countLabelDef, pointCenterCenterValue);
+                        }
+                    }
+                }
+                catch
+                {
+                    // 如果反射失败，忽略错误，使用默认设置
+                }
+
                 clusterReduction.LabelDefinitions.Add(countLabelDef);
+
                 subLayer.FeatureReduction = clusterReduction;
 
                 // 配置景点名称标签
@@ -320,11 +383,17 @@ namespace SmartNanjingTravel.ViewModels
                     HorizontalAlignment = Esri.ArcGISRuntime.Symbology.HorizontalAlignment.Center,
                     OffsetX = -10,
                 };
+
                 var labelExpression = new Esri.ArcGISRuntime.Mapping.Labeling.SimpleLabelExpression("[Name]");
-                var labelDef = new Esri.ArcGISRuntime.Mapping.LabelDefinition(labelExpression, labelTextSymbol)
+                var labelDef = new Esri.ArcGISRuntime.Mapping.LabelDefinition(labelExpression, labelTextSymbol);
+
+                // 设置最小缩放比例
+                var minScaleProp = labelDef.GetType().GetProperty("MinScale");
+                if (minScaleProp != null)
                 {
-                    MinScale = 0
-                };
+                    minScaleProp.SetValue(labelDef, 100000.0);
+                }
+
                 subLayer.LabelDefinitions.Clear();
                 subLayer.LabelDefinitions.Add(labelDef);
                 subLayer.LabelsEnabled = true;
@@ -337,11 +406,28 @@ namespace SmartNanjingTravel.ViewModels
                     await mapView.SetViewpointCenterAsync(validPoints[0], 10000);
                 else
                 {
+                    // 创建一个包含所有点的范围
                     var multipoint = new Esri.ArcGISRuntime.Geometry.Multipoint(validPoints);
-                    await mapView.SetViewpointGeometryAsync(multipoint.Extent, 50);
+
+                    // 如果是大量景点（比如景区总览），使用更大的边距
+                    if (validPoints.Count > 10)
+                    {
+                        await mapView.SetViewpointGeometryAsync(multipoint.Extent, 100);
+                    }
+                    else
+                    {
+                        await mapView.SetViewpointGeometryAsync(multipoint.Extent, 50);
+                    }
                 }
             }
         }
+
+
+
+
+
+
+
 
         // 新增方法：生成稳定的POI_ID
         private int GenerateStablePoiId(string name, double longitude, double latitude)
