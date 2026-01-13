@@ -5,11 +5,19 @@ using Esri.ArcGISRuntime.Reduction;
 using Esri.ArcGISRuntime.Symbology;
 using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.UI.Controls;
+using Microsoft.Data.Sqlite;
 using Microsoft.Win32;
+using OxyPlot;
+using OxyPlot.Axes;
+using OxyPlot.Series;
+using SmartNanjingTravel.Data;
 using SmartNanjingTravel.Models;
 using SmartNanjingTravel.ViewModels;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
+using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
@@ -22,7 +30,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Net.Http;
+
 namespace SmartNanjingTravel
 {
     /// <summary>
@@ -32,11 +40,14 @@ namespace SmartNanjingTravel
     {
         private AmapRouteService _routeService = new AmapRouteService();
         private AmapPoiViewModel _amapPoiViewModel;
-        private ObservableCollection<FavoriteItem> _favoriteItems = new ObservableCollection<FavoriteItem>();
-        private List<FavoriteItem> _allFavorites = new List<FavoriteItem>();
+        private ObservableCollection<SmartNanjingTravel.Models.FavoriteItem> _favoriteItems = new ObservableCollection<SmartNanjingTravel.Models.FavoriteItem>();
+        private List<SmartNanjingTravel.Models.FavoriteItem> _allFavorites = new List<SmartNanjingTravel.Models.FavoriteItem>();
         private bool _isScenicLayerVisible = false;
         private FeatureCollectionLayer _scenicSpotsLayer = null;
         private GraphicsOverlay _scenicSpotsOverlay = null;
+        private PlotModel _ratingDistributionModel;
+        private PlotModel _districtRatingModel;
+
         public class ViaPointItem
         {
             public string Address { get; set; } = "";
@@ -63,6 +74,9 @@ namespace SmartNanjingTravel
 
             // 初始化时加载收藏数据
             LoadFavoritesData();
+
+            RatingDistributionChart = new OxyPlot.Wpf.PlotView();
+            DistrictRatingChart = new OxyPlot.Wpf.PlotView();
 
         }
 
@@ -183,7 +197,8 @@ namespace SmartNanjingTravel
                 RoutePlanningPanel,
                 FavoritesPanel,
                 LayerControlPanel,
-                RecommendationPanel
+                RecommendationPanel,
+                RatingStatisticsPanel
             };
 
             // 如果要显示的面板就是当前点击的，则显示；其他全部隐藏
@@ -706,7 +721,7 @@ namespace SmartNanjingTravel
         // 在地图上查看
         private void ViewOnMapButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is FavoriteItem favorite)
+            if (sender is Button button && button.Tag is SmartNanjingTravel.Models.FavoriteItem favorite)
             {
                 try
                 {
@@ -732,7 +747,7 @@ namespace SmartNanjingTravel
 
         private void DeleteFavoriteButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is FavoriteItem favorite)
+            if (sender is Button button && button.Tag is SmartNanjingTravel.Models.FavoriteItem favorite)
             {
                 var result = MessageBox.Show($"确定要删除收藏的'{favorite.Name}'吗？", "确认删除",
                     MessageBoxButton.YesNo, MessageBoxImage.Question);
@@ -1062,6 +1077,329 @@ namespace SmartNanjingTravel
                 }
             }
         }
+
+        private void RatingStatisticsButton_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchPanel(RatingStatisticsPanel);
+            LoadRatingStatistics();
+        }
+
+        // 关闭评分统计面板
+        private void CloseRatingStatisticsPanel_Click(object sender, RoutedEventArgs e)
+        {
+            RatingStatisticsPanel.Visibility = Visibility.Collapsed;
+        }
+
+        // 刷新统计数据
+        private void RefreshStatisticsButton_Click(object sender, RoutedEventArgs e)
+        {
+            LoadRatingStatistics();
+        }
+
+        // 加载评分统计数据
+        private void LoadRatingStatistics()
+        {
+            try
+            {
+               Debug.WriteLine("开始加载评分统计...");
+                Debug.WriteLine($"AddressInfoList 数量: {_amapPoiViewModel?.AddressInfoList?.Count ?? 0}");
+                var allRatings = new List<double>();
+                var districtRatings = new Dictionary<string, List<double>>();
+
+                // 方法1：从 AmapPoiViewModel 的 AddressInfoList 获取数据
+                if (_amapPoiViewModel?.AddressInfoList != null && _amapPoiViewModel.AddressInfoList.Count > 0)
+                {
+                    foreach (var addressInfo in _amapPoiViewModel.AddressInfoList)
+                    {
+                        if (!string.IsNullOrEmpty(addressInfo.Rating))
+                        {
+                            // 处理评分字符串（可能需要清理非数字字符）
+                            string ratingStr = addressInfo.Rating.Replace("暂无评分", "0")
+                                                                 .Replace("暂无", "0");
+
+                            if (double.TryParse(ratingStr, out double rating))
+                            {
+                                allRatings.Add(rating);
+
+                                // 按行政区统计
+                                string district = string.IsNullOrEmpty(addressInfo.Adname)
+                                    ? "未知"
+                                    : addressInfo.Adname;
+
+                                if (!districtRatings.ContainsKey(district))
+                                {
+                                    districtRatings[district] = new List<double>();
+                                }
+                                districtRatings[district].Add(rating);
+                            }
+                        }
+                    }
+                }
+
+                // 方法2：如果上面没数据，尝试从地图图层获取
+                if (allRatings.Count == 0)
+                {
+                    // 从 FeatureCollectionLayer 获取数据
+                    var scenicLayer = MyMapView.Map.OperationalLayers
+                        .FirstOrDefault(l => l.Id == "ScenicSpotsLayer") as FeatureCollectionLayer;
+
+                    if (scenicLayer != null)
+                    {
+                        // 这里需要异步查询，所以可能需要修改方法为 async
+                        // 简化处理：直接从 _amapPoiViewModel 获取数据
+                    }
+                }
+
+                // 方法3：从 POI_INFO 数据库表获取历史数据
+                if (allRatings.Count == 0)
+                {
+                    try
+                    {
+                        using (var connection = new SqliteConnection($"Data Source={DatabaseHelper.DatabasePath}"))
+                        {
+                            connection.Open();
+
+                            using (var command = connection.CreateCommand())
+                            {
+                                command.CommandText = @"
+                            SELECT RATING, ADNAME 
+                            FROM POI_INFO 
+                            WHERE RATING IS NOT NULL AND RATING != ''";
+
+                                using (var reader = command.ExecuteReader())
+                                {
+                                    while (reader.Read())
+                                    {
+                                        string ratingStr = reader["RATING"]?.ToString();
+                                        string district = reader["ADNAME"]?.ToString() ?? "未知";
+
+                                        if (double.TryParse(ratingStr, out double rating))
+                                        {
+                                            allRatings.Add(rating);
+
+                                            if (!districtRatings.ContainsKey(district))
+                                            {
+                                                districtRatings[district] = new List<double>();
+                                            }
+                                            districtRatings[district].Add(rating);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"从数据库获取评分数据失败: {ex.Message}");
+                    }
+                }
+
+                // 更新UI
+                UpdateStatisticsUI(allRatings, districtRatings, DateTime.Now);
+
+                // 创建图表（如果数据为空，显示空图表）
+                if (allRatings.Count > 0)
+                {
+                    CreateRatingDistributionChart(allRatings);
+                    CreateDistrictRatingChart(districtRatings);
+                }
+                else
+                {
+                    // 显示无数据提示
+                    ShowNoDataMessage();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"加载评分统计失败：{ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // 显示无数据提示的方法
+        private void ShowNoDataMessage()
+        {
+            // 清空图表
+            RatingDistributionChart.Model = null;
+            DistrictRatingChart.Model = null;
+
+            // 更新统计文本
+            AverageRatingText.Text = "暂无数据";
+            TotalPoiText.Text = "0";
+            MaxRatingText.Text = "暂无";
+            MinRatingText.Text = "暂无";
+        }
+
+        private void UpdateStatisticsUI(List<double> allRatings, Dictionary<string, List<double>> districtRatings, DateTime lastUpdate)
+        {
+            if (allRatings.Count == 0) return;
+
+            double average = allRatings.Average();
+            double max = allRatings.Max();
+            double min = allRatings.Min();
+
+            AverageRatingText.Text = average.ToString("F1");
+            TotalPoiText.Text = allRatings.Count.ToString();
+            MaxRatingText.Text = max.ToString("F1");
+            MinRatingText.Text = min.ToString("F1");
+        }
+
+        // 创建评分分布柱状图
+        private void CreateRatingDistributionChart(List<double> ratings)
+        {
+            if (ratings.Count == 0) return;
+
+            // 创建数据模型
+            _ratingDistributionModel = new PlotModel
+            {
+                Title = "评分分布",
+                TitleColor = OxyColors.Black,
+                TitleFontSize = 14,
+                PlotAreaBorderThickness = new OxyThickness(0),
+                Background = OxyColors.White,
+                PlotAreaBackground = OxyColors.White
+            };
+
+            // 创建柱状图系列（使用BarSeries代替ColumnSeries）
+            var series = new BarSeries
+            {
+                Title = "数量",
+                FillColor = OxyColor.FromRgb(103, 58, 183), // 紫色
+                StrokeColor = OxyColors.Black,
+                StrokeThickness = 1,
+                LabelPlacement = LabelPlacement.Inside,
+                LabelFormatString = "{0}"
+            };
+
+            // 定义评分区间（更精细的划分）
+            var ratingBins = new Dictionary<string, int>
+    {
+        {"1-1.5星", 0},
+        {"1.5-2星", 0},
+        {"2-2.5星", 0},
+        {"2.5-3星", 0},
+        {"3-3.5星", 0},
+        {"3.5-4星", 0},
+        {"4-4.5星", 0},
+        {"4.5-5星", 0}
+    };
+
+            // 统计各区间数量
+            foreach (var rating in ratings)
+            {
+                if (rating >= 1.0 && rating < 1.5)
+                    ratingBins["1-1.5星"]++;
+                else if (rating >= 1.5 && rating < 2.0)
+                    ratingBins["1.5-2星"]++;
+                else if (rating >= 2.0 && rating < 2.5)
+                    ratingBins["2-2.5星"]++;
+                else if (rating >= 2.5 && rating < 3.0)
+                    ratingBins["2.5-3星"]++;
+                else if (rating >= 3.0 && rating < 3.5)
+                    ratingBins["3-3.5星"]++;
+                else if (rating >= 3.5 && rating < 4.0)
+                    ratingBins["3.5-4星"]++;
+                else if (rating >= 4.0 && rating < 4.5)
+                    ratingBins["4-4.5星"]++;
+                else if (rating >= 4.5 && rating <= 5.0)
+                    ratingBins["4.5-5星"]++;
+            }
+
+            // 创建数据点
+            var categories = new List<string>();
+            var values = new List<double>();
+
+            foreach (var kvp in ratingBins)
+            {
+                categories.Add(kvp.Key);
+                values.Add(kvp.Value);
+                series.Items.Add(new BarItem(kvp.Value));
+            }
+
+            // 添加X轴（数值轴）
+            _ratingDistributionModel.Axes.Add(new LinearAxis
+            {
+                Position = AxisPosition.Bottom,
+                Title = "数量",
+                Minimum = 0,
+                AbsoluteMinimum = 0,
+                MajorGridlineStyle = LineStyle.Solid,
+                MinorGridlineStyle = LineStyle.Dot,
+                MajorGridlineColor = OxyColor.FromArgb(40, 0, 0, 0),
+                MinorGridlineColor = OxyColor.FromArgb(20, 0, 0, 0)
+            });
+
+            // 添加Y轴（类别轴）
+            _ratingDistributionModel.Axes.Add(new CategoryAxis
+            {
+                Position = AxisPosition.Left,
+                Title = "评分区间",
+                ItemsSource = categories,
+                GapWidth = 0.2
+            });
+
+            _ratingDistributionModel.Series.Add(series);
+            RatingDistributionChart.Model = _ratingDistributionModel;
+        }
+
+        // 创建行政区评分饼图
+        private void CreateDistrictRatingChart(Dictionary<string, List<double>> districtRatings)
+        {
+            if (districtRatings.Count == 0) return;
+
+            _districtRatingModel = new PlotModel
+            {
+                Title = "行政区POI数量分布",
+                TitleColor = OxyColors.Black,
+                TitleFontSize = 14,
+                PlotAreaBorderThickness = new OxyThickness(0)
+            };
+
+            var series = new PieSeries
+            {
+                StrokeThickness = 2,
+                InsideLabelPosition = 0.8,
+                AngleSpan = 360,
+                StartAngle = 0,
+                OutsideLabelFormat = "{1}: {0:F0}",
+                TrackerFormatString = "{0}: {1}个POI，平均评分{3:F1}"
+            };
+
+            // 定义颜色方案
+            var colors = new[]
+            {
+        OxyColor.FromRgb(103, 58, 183),   // 紫色
+        OxyColor.FromRgb(33, 150, 243),   // 蓝色
+        OxyColor.FromRgb(0, 150, 136),    // 青色
+        OxyColor.FromRgb(255, 193, 7),    // 黄色
+        OxyColor.FromRgb(255, 87, 34),    // 橙色
+        OxyColor.FromRgb(156, 39, 176),   // 深紫色
+        OxyColor.FromRgb(76, 175, 80)     // 绿色
+    };
+
+            int colorIndex = 0;
+
+            // 按POI数量排序
+            foreach (var kvp in districtRatings.OrderByDescending(d => d.Value.Count))
+            {
+                if (kvp.Value.Count == 0) continue;
+
+                double averageRating = kvp.Value.Average();
+                string label = $"{kvp.Key} ({kvp.Value.Count}个)";
+
+                series.Slices.Add(new PieSlice(label, kvp.Value.Count)
+                {
+                    Fill = colors[colorIndex % colors.Length]
+                    // 在Tooltip中显示平均评分
+                });
+
+                colorIndex++;
+            }
+
+            _districtRatingModel.Series.Add(series);
+            DistrictRatingChart.Model = _districtRatingModel;
+        }
+
 
         // 路径规划类
         public class AmapRouteService
