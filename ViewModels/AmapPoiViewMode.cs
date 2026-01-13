@@ -272,10 +272,6 @@ namespace SmartNanjingTravel.ViewModels
                 await featureTable.AddFeaturesAsync(featuresToAdd);
             }
 
-            // --- 3. 将POI数据保存到本地数据库（如果需要）---
-            // 这可以确保收藏功能有可用的POI_ID
-            SavePoiDataToLocalDatabase(poiIdMap);
-
             // --- 4. 创建并显示地图图层 ---
             var featureCollection = new FeatureCollection();
             featureCollection.Tables.Add(featureTable);
@@ -448,65 +444,6 @@ namespace SmartNanjingTravel.ViewModels
             }
         }
 
-        // 新增方法：将POI数据保存到本地数据库
-        private void SavePoiDataToLocalDatabase(Dictionary<int, AddressInfo> poiIdMap)
-        {
-            try
-            {
-                using (var connection = new SqliteConnection($"Data Source={DatabaseHelper.DatabasePath}"))
-                {
-                    connection.Open();
-
-                    foreach (var kvp in poiIdMap)
-                    {
-                        var poiId = kvp.Key;
-                        var info = kvp.Value;
-
-                        // 检查是否已存在该POI
-                        using (var checkCommand = connection.CreateCommand())
-                        {
-                            checkCommand.CommandText = "SELECT COUNT(*) FROM POI_INFO WHERE POI_ID = @poiId";
-                            checkCommand.Parameters.AddWithValue("@poiId", poiId);
-                            var exists = Convert.ToInt32(checkCommand.ExecuteScalar()) > 0;
-
-                            if (!exists)
-                            {
-                                // 插入新的POI数据
-                                using (var insertCommand = connection.CreateCommand())
-                                {
-                                    insertCommand.CommandText = @"
-                                INSERT OR IGNORE INTO POI_INFO 
-                                (POI_ID, POI_NAME, CAT_ID, DISTRICT, ADDR, LAT, LNG, 
-                                 DESC, RATING, OPEN_TIME, CREATE_TIME) 
-                                VALUES (@poiId, @name, @catId, @district, @address, 
-                                        @latitude, @longitude, @desc, @rating, 
-                                        @openTime, @createTime)";
-
-                                    insertCommand.Parameters.AddWithValue("@poiId", poiId);
-                                    insertCommand.Parameters.AddWithValue("@name", info.Name ?? "未知景点");
-                                    insertCommand.Parameters.AddWithValue("@catId", GetCategoryId(info.Name)); // 根据名称确定分类
-                                    insertCommand.Parameters.AddWithValue("@district", info.Adname ?? "");
-                                    insertCommand.Parameters.AddWithValue("@address", info.Address ?? "");
-                                    insertCommand.Parameters.AddWithValue("@latitude", info.Latitude ?? "0");
-                                    insertCommand.Parameters.AddWithValue("@longitude", info.Longitude ?? "0");
-                                    insertCommand.Parameters.AddWithValue("@desc", info.Name ?? "");
-                                    insertCommand.Parameters.AddWithValue("@rating", info.Rating ?? "0");
-                                    insertCommand.Parameters.AddWithValue("@openTime", info.Opentime ?? "");
-                                    insertCommand.Parameters.AddWithValue("@createTime", DateTime.Now);
-
-                                    insertCommand.ExecuteNonQuery();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // 如果数据库保存失败，只是记录日志，不影响主要功能
-                Console.WriteLine($"保存POI数据到数据库失败: {ex.Message}");
-            }
-        }
 
         // 辅助方法：根据景点名称确定分类ID
         private int GetCategoryId(string poiName)

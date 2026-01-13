@@ -109,28 +109,26 @@
                 </StackPanel>
             </Button>
 
-            <Button Style="{StaticResource SidebarButton}" 
+                <Button Style="{StaticResource SidebarButton}" 
                         ToolTip="我的收藏"
                         x:Name="FavoriteButton"
                         Click="MyFavoritesButton_Click">
-                <!-- 添加这行 -->
-                <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal">
                     <materialDesign:PackIcon Kind="Star" Width="20" Height="20" Margin="0,0,10,0"/>
                     <TextBlock Text="我的收藏"/>
                 </StackPanel>
             </Button>
         </StackPanel>
-
-        <!-- 将原来的数据管理按钮部分修改为： -->
-        <StackPanel Grid.Row="7" Margin="10,0,10,20">
+        
+        <StackPanel Grid.Row="7" Margin="1,0,1,20">
             <Separator Style="{StaticResource MaterialDesignSeparator}" Margin="0,0,0,15"/>
             <Button Style="{StaticResource SidebarButton}" 
-        ToolTip="评分统计"
-        x:Name="RatingStatisticsButton"
-        Click="RatingStatisticsButton_Click">
+                    ToolTip="景区评分统计"
+                    x:Name="RatingStatisticsButton"
+                    Click="RatingStatisticsButton_Click">
                 <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="ChartBar" Width="20" Height="20" Margin="0,0,10,0"/>
-                    <TextBlock Text="评分统计"/>
+                    <materialDesign:PackIcon Kind="ChartBar" Width="20" Height="20" Margin="0,0,4,0"/>
+                    <TextBlock Text="景区评分统计"/>
                 </StackPanel>
             </Button>
         </StackPanel>
@@ -170,7 +168,7 @@
                                      Text="{Binding InputAddress, UpdateSourceTrigger=PropertyChanged}" 
                                      Grid.Column="0"
                                      Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                     materialDesign:HintAssist.Hint="搜索景点名称、类型或区域..."
+                                     materialDesign:HintAssist.Hint="搜索景点名称"
                                      FontSize="14"
                                      Height="45"
                                      VerticalContentAlignment="Center"
@@ -251,7 +249,7 @@
                 </StackPanel>
             </Canvas>
             <!-- 路线规划面板（默认折叠） -->
-            <Border x:Name="RoutePlanningPanel"
+                <Border x:Name="RoutePlanningPanel"
                          Width="400"
                         HorizontalAlignment="Left"
                         VerticalAlignment="Top"
@@ -263,116 +261,116 @@
                         BorderBrush="#FFE0E0E0"
                         BorderThickness="1">
 
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                    <!-- 面板标题栏 -->
-                    <Border Grid.Row="0" 
+                        <!-- 面板标题栏 -->
+                        <Border Grid.Row="0" 
                                 Background="{DynamicResource MaterialDesign.Brush}"
                                 CornerRadius="8,8,0,0"
                                 Padding="15,12">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Column="0" 
+                                <TextBlock Grid.Column="0" 
                                            Text="路线规划" 
                                            FontSize="16" 
                                            FontWeight="Bold"
                                            Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
                                            VerticalAlignment="Center"/>
 
-                            <Button Grid.Column="1"
+                                <Button Grid.Column="1"
                                         Style="{StaticResource MaterialDesignIconButton}"
                                         Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
                                         Click="CloseRoutePlanningPanel_Click"
                                         ToolTip="关闭">
-                                <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
-                            </Button>
-                        </Grid>
-                    </Border>
+                                    <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                                </Button>
+                            </Grid>
+                        </Border>
 
-                    <!-- 路线规划内容 -->
-                    <ScrollViewer Grid.Row="1" 
+                        <!-- 路线规划内容 -->
+                        <ScrollViewer Grid.Row="1" 
                                       VerticalScrollBarVisibility="Auto"
                                       Padding="15,15,15,0">
-                        <StackPanel>
-                            <!-- 起始点 -->
-                            <Border Style="{StaticResource RoutePointItem}">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
+                            <StackPanel>
+                                <!-- 起始点 -->
+                                <Border Style="{StaticResource RoutePointItem}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
 
-                                    <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
-                                        <materialDesign:PackIcon Kind="MapMarker" 
+                                        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
+                                            <materialDesign:PackIcon Kind="MapMarker" 
                                                                      Width="16" 
                                                                      Height="16" 
                                                                      Margin="0,0,8,0"
                                                                      VerticalAlignment="Center"
                                                                      Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
-                                        <TextBlock Text="起始点" 
+                                            <TextBlock Text="起始点" 
                                                        FontWeight="SemiBold"
                                                        VerticalAlignment="Center"/>
-                                    </StackPanel>
+                                        </StackPanel>
 
-                                    <TextBox Grid.Row="1"
+                                        <TextBox Grid.Row="1"
                                                  x:Name="StartPointTextBox"
                                                  Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                                  materialDesign:HintAssist.Hint="请输入起点位置"
                                                  FontSize="14"
                                                  Padding="10,8"
                                                  BorderThickness="0"/>
-                                </Grid>
-                            </Border>
+                                    </Grid>
+                                </Border>
 
-                            <!-- 途径点（动态添加） -->
-                            <ItemsControl x:Name="ViaPointsItemsControl" 
+                                <!-- 途径点（动态添加） -->
+                                <ItemsControl x:Name="ViaPointsItemsControl" 
                                               ItemsSource="{Binding ViaPoints}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Style="{StaticResource RoutePointItem}"
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource RoutePointItem}"
                                                     Margin="0,0,0,10">
-                                            <Grid>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
 
-                                                <StackPanel Orientation="Horizontal" 
+                                                    <StackPanel Orientation="Horizontal" 
                                                                 Grid.Row="0" 
                                                                 Margin="0,0,0,8">
-                                                    <materialDesign:PackIcon Kind="MapMarkerPlus" 
+                                                        <materialDesign:PackIcon Kind="MapMarkerPlus" 
                                                                                  Width="16" 
                                                                                  Height="16" 
                                                                                  Margin="0,0,8,0"
                                                                                  VerticalAlignment="Center"
                                                                                  Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
-                                                    <TextBlock Text="途径点" 
+                                                        <TextBlock Text="途径点" 
                                                                    FontWeight="SemiBold"
                                                                    VerticalAlignment="Center"/>
-                                                    <Button Style="{StaticResource MaterialDesignIconButton}"
+                                                        <Button Style="{StaticResource MaterialDesignIconButton}"
                                                                  Margin="10,0,0,0"
                                                                 VerticalAlignment="Center"
                                                                   ToolTip="删除途径点"
                                                               Click="DeleteViaPointButton_Click"
                                                                      DataContext="{Binding}">
-                                                        <materialDesign:PackIcon Kind="MinusCircle" 
+                                                            <materialDesign:PackIcon Kind="MinusCircle" 
                                                      Width="16" 
                                                      Height="16"
                                                      Foreground="{DynamicResource MaterialDesign.Brush.Error}"/>
-                                                    </Button>
-                                                </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
 
-                                                <TextBox Grid.Row="1"
+                                                    <TextBox Grid.Row="1"
                                                              Text="{Binding Address}"
                                                              Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                                              materialDesign:HintAssist.Hint="请输入途径点位置"
@@ -380,85 +378,86 @@
                                                              Padding="10,8"
                                                              Margin="0,0,0,8"
                                                              BorderThickness="0"/>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
 
-                            <!-- 添加途径点按钮 -->
-                            <Button x:Name="AddViaPointButton"
+                                <!-- 添加途径点按钮 -->
+                                <Button x:Name="AddViaPointButton"
                                         Style="{StaticResource MaterialDesignOutlinedButton}"
                                         Margin="14,8"
                                         Padding="10,8"
                                         Click="AddViaPointButton_Click">
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="Plus" 
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Plus" 
                                                                  Width="16" 
                                                                  Height="16" 
                                                                  Margin="0,0,8,0"/>
-                                    <TextBlock Text="添加途径点"/>
-                                </StackPanel>
-                            </Button>
+                                        <TextBlock Text="添加途径点"/>
+                                    </StackPanel>
+                                </Button>
 
-                            <!-- 目的地 -->
-                            <Border Style="{StaticResource RoutePointItem}">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
+                                <!-- 目的地 -->
+                                <Border Style="{StaticResource RoutePointItem}">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
 
-                                    <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
-                                        <materialDesign:PackIcon Kind="Flag" 
+                                        <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
+                                            <materialDesign:PackIcon Kind="Flag" 
                                                                      Width="16" 
                                                                      Height="16" 
                                                                      Margin="0,0,8,0"
                                                                      VerticalAlignment="Center"
                                                                      Foreground="{DynamicResource MaterialDesign.Brush.Error}"/>
-                                        <TextBlock Text="目的地" 
+                                            <TextBlock Text="目的地" 
                                                        FontWeight="SemiBold"
                                                        VerticalAlignment="Center"
                                                        />
-                                    </StackPanel>
+                                        </StackPanel>
 
-                                    <TextBox Grid.Row="1"
+                                        <TextBox Grid.Row="1"
                                                  x:Name="DestinationTextBox"
                                                  Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                                  materialDesign:HintAssist.Hint="请输入目的地位置"
                                                  FontSize="14"
                                                  Padding="10,8"
                                                  BorderThickness="0"/>
-                                </Grid>
-                            </Border>
+                                    </Grid>
+                                </Border>
 
 
-                        </StackPanel>
-                    </ScrollViewer>
+                            </StackPanel>
+                        </ScrollViewer>
+
                         <!-- 底部操作按钮 -->
                         <Border Grid.Row="2"
-        Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
-        CornerRadius="0,0,8,8"
-        Padding="15,12">
+                                Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
+                                CornerRadius="0,0,8,8"
+                                Padding="15,12">
                             <StackPanel Orientation="Vertical" 
-                HorizontalAlignment="Right" 
-                VerticalAlignment="Top" 
-                Margin="0,10,10,0">
+                                        HorizontalAlignment="Right" 
+                                        VerticalAlignment="Top" 
+                                        Margin="0,10,10,0">
 
                                 <!-- 第一行：按钮区域 -->
                                 <StackPanel Orientation="Horizontal" 
-                    HorizontalAlignment="Right" 
-                    Margin="0,0,0,10">
+                                            HorizontalAlignment="Right" 
+                                            Margin="0,0,0,10">
                                     <Button x:Name="ClearRouteButton"
-                    Style="{StaticResource MaterialDesignOutlinedButton}"
-                    Content="清空"
-                    Margin="0,0,10,0"
-                    Click="ClearRouteButton_Click"/>
+                                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                                            Content="清空"
+                                            Margin="0,0,10,0"
+                                            Click="ClearRouteButton_Click"/>
 
                                     <Button x:Name="SearchRouteButton"
-                    Style="{StaticResource MaterialDesignRaisedButton}"
-                    Content="开始导航"
-                    Click="SearchRouteButton_Click">
+                                            Style="{StaticResource MaterialDesignRaisedButton}"
+                                            Content="开始导航"
+                                            Click="SearchRouteButton_Click">
                                         <Button.ContentTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
@@ -475,14 +474,14 @@
 
                                 <!-- 导航历史列表区域 -->
                                 <StackPanel Orientation="Horizontal" 
-                    HorizontalAlignment="Right" 
-                    Margin="0,0,0,10">
+                                            HorizontalAlignment="Right" 
+                                            Margin="0,0,0,10">
                                     <ListBox x:Name="RouteHistoryList" 
-                     BorderThickness="0" 
-                     Background="Transparent"
-                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                     MaxHeight="400">
+                                             BorderThickness="0" 
+                                             Background="Transparent"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                             MaxHeight="400">
                                         <ListBox.ItemContainerStyle>
                                             <Style TargetType="ListBoxItem">
                                                 <Setter Property="Padding" Value="0"/>
@@ -501,7 +500,7 @@
                                         <ListBox.ItemTemplate>
                                             <DataTemplate>
                                                 <!-- 外层卡片：自定义四周阴影 -->
-                                                <Border Background="White" CornerRadius="8" Padding="15" Margin="4,4,4,12" Width="320">
+                                                <Border Background="White" CornerRadius="8" Padding="15" Margin="2,10,2,10" Width="354">
                                                     <Border.Effect>
                                                         <!-- ShadowDepth=0 配合 BlurRadius 可以实现四周均匀发光/阴影效果 -->
                                                         <DropShadowEffect Color="Gray" Direction="0" ShadowDepth="0" BlurRadius="10" Opacity="0.3"/>
@@ -513,10 +512,10 @@
                                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                                 <materialDesign:PackIcon Kind="ClockTimeFourOutline" Foreground="#673AB7" Margin="0,0,5,0" VerticalAlignment="Center"/>
                                                                 <TextBlock Text="{Binding SummaryText}" 
-                                   Foreground="#673AB7" 
-                                   FontWeight="Bold" 
-                                   FontSize="15"
-                                   VerticalAlignment="Center"/>
+                                                                           Foreground="#673AB7" 
+                                                                           FontWeight="Bold" 
+                                                                           FontSize="15"
+                                                                           VerticalAlignment="Center"/>
                                                             </StackPanel>
                                                         </Border>
 
@@ -564,12 +563,11 @@
 
                     </Grid>
                 </Border>
-                
-                
+
                 <!-- 我的收藏面板（默认折叠） -->
                 <Border x:Name="FavoritesPanel"
                         Width="400"  HorizontalAlignment="Left" VerticalAlignment="Top"
-                        Margin="20,20,20,0" Background="#FFFFFFFF" CornerRadius="8" Padding="0"
+                        Margin="20,20,20,90" Background="#FFFFFFFF" CornerRadius="8" Padding="0"
                         Visibility="Collapsed" BorderBrush="#FFE0E0E0" BorderThickness="1" Grid.Row="1">
 
                 <Grid>
@@ -580,8 +578,9 @@
                     </Grid.RowDefinitions>
 
                     <!-- 面板标题栏 -->
-                    <Border Grid.Row="0"  Background="{DynamicResource MaterialDesign.Brush}"
-                                CornerRadius="8,8,0,0"   Padding="15,12">
+                    <Border Grid.Row="0"  
+                            Background="{DynamicResource MaterialDesign.Brush}"
+                            CornerRadius="8,8,0,0"   Padding="15,12">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -589,36 +588,76 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                    <TextBlock Text="我的收藏" 
-                               FontSize="16" 
-                               FontWeight="Bold"
-                               Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
-                               VerticalAlignment="Center"/>
+                                <TextBlock Text="我的收藏" 
+                                           FontSize="16" 
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                                           VerticalAlignment="Center"/>
                             </StackPanel>
 
                             <Button Grid.Column="1"
-                        Style="{StaticResource MaterialDesignIconButton}"
-                        Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
-                        Click="CloseFavoritesPanel_Click"
-                        ToolTip="关闭">
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                                    Click="CloseFavoritesPanel_Click"
+                                    ToolTip="关闭">
                                 <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
                             </Button>
                         </Grid>
                     </Border>
 
                     <!-- 收藏内容区 -->
-                    <ScrollViewer Grid.Row="1" 
-                                      VerticalScrollBarVisibility="Auto"
-                                      Padding="15,15,15,0">
-                        <StackPanel>
+                        <ScrollViewer Grid.Row="1" 
+                                  VerticalScrollBarVisibility="Auto"
+                                  Padding="15,15,15,0">
+                            <StackPanel>
+                                <Border x:Name="EmptyStateBorder" 
+                                Margin="15"
+                                Visibility="Visible">
+                                    <Grid Width="370" Height="280">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
 
+                                        <!-- 图标区域 -->
+                                        <StackPanel Grid.Row="0"
+                                                    VerticalAlignment="Center"
+                                                    HorizontalAlignment="Center">
+                                            <Border Width="100" Height="100" 
+                                                    Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
+                                                    CornerRadius="50"
+                                                    Margin="0,0,0,20">
+                                                <materialDesign:PackIcon Kind="StarOutline" 
+                                                                         Width="48" 
+                                                                         Height="48"
+                                                                         Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                                                         HorizontalAlignment="Center"
+                                                                         VerticalAlignment="Center"/>
+                                            </Border>
 
-                            <!-- 收藏项列表 -->
-                            <ItemsControl x:Name="FavoritesItemsControl">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Style="{StaticResource RoutePointItem}"
-                                    Margin="0,0,0,10">
+                                            <TextBlock Text="暂无收藏"
+                                                       FontSize="18"
+                                                       FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
+                                                       HorizontalAlignment="Center"
+                                                       Margin="0,0,0,8"/>
+
+                                            <TextBlock Text="点击景点的收藏按钮，将您喜欢的景点添加到收藏夹"
+                                                       FontSize="14"
+                                                       TextWrapping="Wrap"
+                                                       TextAlignment="Center"
+                                                       MaxWidth="280"
+                                                       HorizontalAlignment="Center"
+                                                       Opacity="0.7"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <!-- 收藏项列表 -->
+                                <ItemsControl x:Name="FavoritesItemsControl">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource RoutePointItem}"
+                                                    Margin="0,0,0,10">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto"/>
@@ -726,31 +765,7 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <!-- 空状态提示 -->
-                            <Border x:Name="EmptyStateBorder" 
-                                        Style="{StaticResource RoutePointItem}"
-                                        Margin="0,20,0,0"
-                                        Visibility="Collapsed">
-                                <StackPanel HorizontalAlignment="Center" 
-                                                VerticalAlignment="Center"
-                                                Margin="20">
-                                    <materialDesign:PackIcon Kind="StarOutline" 
-                                                 Width="48" 
-                                                 Height="48"
-                                                 Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
-                                                 Margin="0,0,0,15"/>
-                                    <TextBlock Text="暂无收藏"
-                                                   FontSize="16"
-                                                   FontWeight="Medium"
-                                                   Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
-                                                   Margin="0,0,0,8"/>
-                                    <TextBlock Text="您还没有收藏任何景点或路线"
-                                                   FontSize="12"
-                                                   Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
-                                                   Opacity="0.7"/>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
+                </StackPanel>
                     </ScrollViewer>
 
                     <!-- 底部操作按钮 -->
@@ -769,7 +784,7 @@
                                     x:Name="FavoritesCountText"
                                     Text="共 0 个收藏"
                                     FontSize="12"
-                                    Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
+                                    Foreground="{DynamicResource MaterialDesign.Brush.Primary}"
                                     VerticalAlignment="Center"/>
 
                             <!-- 操作按钮 -->
@@ -1175,17 +1190,19 @@
 
                         <!-- 评分统计内容 -->
                         <ScrollViewer Grid.Row="1"
-                      VerticalScrollBarVisibility="Auto"
-                      Padding="15,20,15,20">
+                                       VerticalScrollBarVisibility="Auto"
+                                      Padding="15,20,15,20"
+                                      Margin="10">
                             <StackPanel>
                                 <!-- 总体统计 -->
                                 <Border Style="{StaticResource RoutePointItem}"
-                        Margin="0,0,0,15">
+                                        Background="#F9F9F9"    
+                                        Padding="15,20,15,20">
                                     <StackPanel>
                                         <TextBlock Text="总体统计"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,0,10"/>
+                                                   FontSize="16"
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,0,0,10"/>
 
                                         <Grid>
                                             <Grid.RowDefinitions>
@@ -1202,32 +1219,32 @@
                                             <!-- 平均评分 -->
                                             <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,8">
                                                 <TextBlock Text="平均评分" 
-                                                           FontSize="12"
-                                                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                           FontSize="12"
+                                           FontWeight="SemiBold"/>
                                                 <TextBlock x:Name="AverageRatingText"
-                                                           Text="4.2"
-                                                           FontSize="18"
-                                                           FontWeight="Bold"
-                                                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                           Text="4.2"
+                                           FontSize="18"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
                                             </StackPanel>
 
                                             <!-- POI总数 -->
                                             <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,8">
                                                 <TextBlock Text="POI总数" 
-                                                           FontSize="12"
-                                                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                           FontSize="12"
+                                           FontWeight="SemiBold"/>
                                                 <TextBlock x:Name="TotalPoiText"
-                                                           Text="156"
-                                                           FontSize="18"
-                                                           FontWeight="Bold"
-                                                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                           Text="156"
+                                           FontSize="18"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
                                             </StackPanel>
 
                                             <!-- 最高评分 -->
                                             <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,8">
                                                 <TextBlock Text="最高评分" 
                                            FontSize="12"
-                                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                           FontWeight="SemiBold"/>
                                                 <TextBlock x:Name="MaxRatingText"
                                            Text="5.0"
                                            FontSize="18"
@@ -1238,8 +1255,8 @@
                                             <!-- 最低评分 -->
                                             <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,8">
                                                 <TextBlock Text="最低评分" 
-                                           FontSize="12"
-                                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                           FontWeight="SemiBold"
+                                           FontSize="12"/>
                                                 <TextBlock x:Name="MinRatingText"
                                            Text="2.5"
                                            FontSize="18"
@@ -1252,7 +1269,9 @@
 
                                 <!-- 评分分布柱状图 -->
                                 <Border Style="{StaticResource RoutePointItem}"
-                        Margin="0,0,0,15">
+                                        Background="#F9F9F9"
+                                        Margin="0,0,0,15"
+                                        Padding="15">
                                     <StackPanel>
                                         <TextBlock Text="评分分布"
                                    FontSize="16"
@@ -1267,12 +1286,14 @@
                                 </Border>
 
                                 <!-- 行政区评分排名 -->
-                                <Border Style="{StaticResource RoutePointItem}">
+                                <Border Style="{StaticResource RoutePointItem}"
+                                        Background="#F9F9F9"
+                                        Padding="15">
                                     <StackPanel>
                                         <TextBlock Text="行政区评分排名"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,0,10"/>
+                                                   FontSize="16"
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,0,0,10"/>
 
                                         <!-- OxyPlot 饼图 -->
                                         <oxy:PlotView x:Name="DistrictRatingChart"
