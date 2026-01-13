@@ -7,6 +7,7 @@
         xmlns:materialDesign="clr-namespace:MaterialDesignThemes.Wpf;assembly=MaterialDesignThemes.Wpf"
         xmlns:esriToolkit="clr-namespace:Esri.ArcGISRuntime.Toolkit.UI.Controls;assembly=Esri.ArcGISRuntime.Toolkit"
         xmlns:local="clr-namespace:SmartNanjingTravel.ViewModels"
+        xmlns:oxy="http://oxyplot.org/wpf"
          mc:Ignorable="d"
         Title="MainWindow" Height="750" Width="1000"
         Background="{DynamicResource MaterialDesign.Brush.Background}">
@@ -120,19 +121,20 @@
             </Button>
         </StackPanel>
 
-        <!-- 底部数据管理 -->
+        <!-- 将原来的数据管理按钮部分修改为： -->
         <StackPanel Grid.Row="7" Margin="10,0,10,20">
             <Separator Style="{StaticResource MaterialDesignSeparator}" Margin="0,0,0,15"/>
             <Button Style="{StaticResource SidebarButton}" 
-                        ToolTip="数据管理"
-                        x:Name="DataManagementButton">
+        ToolTip="评分统计"
+        x:Name="RatingStatisticsButton"
+        Click="RatingStatisticsButton_Click">
                 <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="DatabaseCog" Width="20" Height="20" Margin="0,0,10,0"/>
-                    <TextBlock Text="数据管理"/>
+                    <materialDesign:PackIcon Kind="ChartBar" Width="20" Height="20" Margin="0,0,10,0"/>
+                    <TextBlock Text="评分统计"/>
                 </StackPanel>
             </Button>
         </StackPanel>
-    </Grid>
+        </Grid>
 
     <!-- 右侧主内容区 -->
     <Grid Grid.Column="1">
@@ -807,42 +809,42 @@
                     BorderBrush="#FFE0E0E0"
                     BorderThickness="1">
 
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                    <!-- 面板标题栏 -->
-                    <Border Grid.Row="0" 
+                        <!-- 面板标题栏 -->
+                        <Border Grid.Row="0" 
                 Background="{DynamicResource MaterialDesign.Brush}"
                 CornerRadius="8,8,0,0"
                 Padding="15,12">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Column="0" 
+                                <TextBlock Grid.Column="0" 
                                        Text="游玩推荐" 
                                        FontSize="16" 
                                        FontWeight="Bold"
                                        Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
                                        VerticalAlignment="Center"/>
 
-                            <Button Grid.Column="1"
+                                <Button Grid.Column="1"
                                     Style="{StaticResource MaterialDesignIconButton}"
                                     Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
                                     Click="CloseRecommendationPanel_Click"
                                     ToolTip="关闭">
-                                <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
-                            </Button>
-                        </Grid>
-                    </Border>
+                                    <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                                </Button>
+                            </Grid>
+                        </Border>
 
-                    <!-- 游玩推荐内容 -->
+                        <!-- 游玩推荐内容 -->
                         <ScrollViewer Grid.Row="1"
                                   VerticalScrollBarVisibility="Auto"
                                   Padding="15,20,15,20">
@@ -1102,17 +1104,17 @@
                         </ScrollViewer>
 
                         <!-- 底部操作按钮 -->
-                    <Border Grid.Row="2" 
+                        <Border Grid.Row="2" 
                             Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
                             CornerRadius="0,0,8,8"
                             Padding="15,12">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <!-- 推荐说明 -->
+                                <!-- 推荐说明 -->
                                 <TextBlock Grid.Column="0"
                                        Text="选择主题或季节，系统将为您推荐最佳游玩路线"
                                        FontSize="12"
@@ -1120,10 +1122,197 @@
                                        VerticalAlignment="Center"
                                        TextWrapping="Wrap"/>
                             </Grid>
-                    </Border>
-                </Grid>
-            </Border>
-            <!-- 图层控制面板（默认折叠） -->
+                        </Border>
+                    </Grid>
+                </Border>
+                <!-- 评分统计面板（默认折叠） -->
+                <Border x:Name="RatingStatisticsPanel"
+                        Width="450"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Margin="20,20,0,90"
+                        Background="#FFFFFFFF"
+                        CornerRadius="8"
+                        Padding="0"
+                        Visibility="Collapsed"
+                        BorderBrush="#FFE0E0E0"
+                        BorderThickness="1">
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 面板标题栏 -->
+                        <Border Grid.Row="0" 
+                                Background="{DynamicResource MaterialDesign.Brush}"
+                                CornerRadius="8,8,0,0"
+                                Padding="15,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" 
+                                           Text="评分统计分析" 
+                                           FontSize="16" 
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                                           VerticalAlignment="Center"/>
+
+                                <Button Grid.Column="1"
+                        Style="{StaticResource MaterialDesignIconButton}"
+                        Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
+                        Click="CloseRatingStatisticsPanel_Click"
+                        ToolTip="关闭">
+                                    <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <!-- 评分统计内容 -->
+                        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="15,20,15,20">
+                            <StackPanel>
+                                <!-- 总体统计 -->
+                                <Border Style="{StaticResource RoutePointItem}"
+                        Margin="0,0,0,15">
+                                    <StackPanel>
+                                        <TextBlock Text="总体统计"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,10"/>
+
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- 平均评分 -->
+                                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,8">
+                                                <TextBlock Text="平均评分" 
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                                <TextBlock x:Name="AverageRatingText"
+                                                           Text="4.2"
+                                                           FontSize="18"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                            </StackPanel>
+
+                                            <!-- POI总数 -->
+                                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,8">
+                                                <TextBlock Text="POI总数" 
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                                <TextBlock x:Name="TotalPoiText"
+                                                           Text="156"
+                                                           FontSize="18"
+                                                           FontWeight="Bold"
+                                                           Foreground="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                            </StackPanel>
+
+                                            <!-- 最高评分 -->
+                                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,8">
+                                                <TextBlock Text="最高评分" 
+                                           FontSize="12"
+                                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                                <TextBlock x:Name="MaxRatingText"
+                                           Text="5.0"
+                                           FontSize="18"
+                                           FontWeight="Bold"
+                                           Foreground="#FF9800"/>
+                                            </StackPanel>
+
+                                            <!-- 最低评分 -->
+                                            <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,8">
+                                                <TextBlock Text="最低评分" 
+                                           FontSize="12"
+                                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"/>
+                                                <TextBlock x:Name="MinRatingText"
+                                           Text="2.5"
+                                           FontSize="18"
+                                           FontWeight="Bold"
+                                           Foreground="#F44336"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- 评分分布柱状图 -->
+                                <Border Style="{StaticResource RoutePointItem}"
+                        Margin="0,0,0,15">
+                                    <StackPanel>
+                                        <TextBlock Text="评分分布"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,15"/>
+
+                                        <!-- OxyPlot 图表区域 -->
+                                        <oxy:PlotView x:Name="RatingDistributionChart"
+                                      Height="200"
+                                      Margin="0,10,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- 行政区评分排名 -->
+                                <Border Style="{StaticResource RoutePointItem}">
+                                    <StackPanel>
+                                        <TextBlock Text="行政区评分排名"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,10"/>
+
+                                        <!-- OxyPlot 饼图 -->
+                                        <oxy:PlotView x:Name="DistrictRatingChart"
+                                      Height="200"
+                                      Margin="0,10,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- 底部操作按钮 -->
+                        <Border Grid.Row="2" 
+                Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}"
+                CornerRadius="0,0,8,8"
+                Padding="15,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- 统计说明 -->
+                                <TextBlock Grid.Column="0"
+                           Text="基于已加载的POI数据进行评分统计分析"
+                           FontSize="12"
+                           Foreground="{DynamicResource MaterialDesign.Brush.Secondary}"
+                           VerticalAlignment="Center"
+                           TextWrapping="Wrap"/>
+
+                                <!-- 刷新按钮 -->
+                                <Button Grid.Column="1"
+                        x:Name="RefreshStatisticsButton"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Content="刷新数据"
+                        Click="RefreshStatisticsButton_Click"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+                <!-- 图层控制面板（默认折叠） -->
             <Border x:Name="LayerControlPanel"
                     Width="220"
                     HorizontalAlignment="Right"
@@ -1157,7 +1346,6 @@
                                            FontSize="16" 
                                            FontWeight="Bold"
                                            Foreground="{DynamicResource MaterialDesign.Brush.OnPrimary}"
-                                           
                                            VerticalAlignment="Center"/>
 
                             <Button Grid.Column="1"

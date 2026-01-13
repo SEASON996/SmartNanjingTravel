@@ -129,25 +129,41 @@ namespace SmartNanjingTravel.ViewModels
             // 只有当 IsVisible 变为 true 时才触发切换逻辑
             if (selectedItem == null || !selectedItem.IsVisible) return;
 
-            // 1. 互斥逻辑：取消选中其他底图标注
-            foreach (var item in LayerItems)
+            if (selectedItem.Name != "标准地图" && selectedItem.Name != "卫星地图")
+                return;
+
+            if (!selectedItem.IsVisible)
             {
-                if (item != selectedItem)
+                // 如果用户取消勾选底图，不创建新底图，只是隐藏当前底图
+                if (_map != null && _map.Basemap != null)
                 {
-                    // 暂时移除事件监听防止死循环
-                    item.PropertyChanged -= BasemapItem_PropertyChanged;
-                    item.IsVisible = false;
-                    item.PropertyChanged += BasemapItem_PropertyChanged;
+                    foreach (var layer in _map.Basemap.BaseLayers)
+                    {
+                        layer.IsVisible = false;
+                    }
                 }
+                return;
             }
 
+            // 互斥逻辑：只处理底图之间的互斥
+            foreach (var item in LayerItems)
+            {
+                if (item.Name == "标准地图" || item.Name == "卫星地图")
+                {
+                    if (item != selectedItem && item.IsVisible)
+                    {
+                        // 暂时移除事件监听防止死循环
+                        item.PropertyChanged -= BasemapItem_PropertyChanged;
+                        item.IsVisible = false;
+                        item.PropertyChanged += BasemapItem_PropertyChanged;
+                    }
+                }
+            }
             // 2. 创建新的底图对象
             Basemap newBasemap = new Basemap();
 
             if (selectedItem.Name == "标准地图")
             {
-                // 直接使用类成员变量，确保 URL、Attribution 与初始加载时完全一致
-                // 之前报错是因为尝试访问不存在的 .Parent 属性，现在直接 Add 即可
                 newBasemap.BaseLayers.Add(_originalGaodeLayer);
             }
             else if (selectedItem.Name == "卫星地图")
@@ -163,7 +179,20 @@ namespace SmartNanjingTravel.ViewModels
 
             if (_map != null)
             {
+                // 保存当前的操作图层
+                var operationalLayers = _map.OperationalLayers.ToList();
+
+                // 设置新底图
                 _map.Basemap = newBasemap;
+
+                // 重新添加操作图层
+                foreach (var layer in operationalLayers)
+                {
+                    if (!_map.OperationalLayers.Contains(layer))
+                    {
+                        _map.OperationalLayers.Add(layer);
+                    }
+                }
             }
         }
 
@@ -221,7 +250,7 @@ namespace SmartNanjingTravel.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"加载路线异常: {ex.Message}", "错误");
+/*                MessageBox.Show($"加载路线异常: {ex.Message}", "错误");*/
                 return false;
             }
         }
@@ -302,11 +331,12 @@ namespace SmartNanjingTravel.ViewModels
             }
         }
         /// 清除所有路线图层
+        // MapViewModel.cs
         public void ClearRouteLayers()
         {
             try
             {
-                // 从地图中移除
+                // 1. 从地图的业务图层中移除
                 var layersToRemove = Map.OperationalLayers
                     .Where(l => l.Name != null && (l.Name.Contains("路线") || l.Name.Contains("景点")))
                     .ToList();
@@ -316,7 +346,7 @@ namespace SmartNanjingTravel.ViewModels
                     Map.OperationalLayers.Remove(layer);
                 }
 
-                // 从LayerItems中移除
+                // 2. 同时清除 UI 绑定的 LayerItems（如果有的话）
                 var itemsToRemove = LayerItems
                     .Where(item => item.Name != null && (item.Name.Contains("路线") || item.Name.Contains("景点")))
                     .ToList();
