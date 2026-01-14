@@ -417,13 +417,6 @@ namespace SmartNanjingTravel.ViewModels
             }
         }
 
-
-
-
-
-
-
-
         // 新增方法：生成稳定的POI_ID
         private int GenerateStablePoiId(string name, double longitude, double latitude)
         {

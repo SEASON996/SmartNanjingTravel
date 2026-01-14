@@ -34,20 +34,26 @@ namespace SmartNanjingTravel
         public ScenicInfoWindow(string name, string rating, string district, string openTime, string imageUrl)
             : this()
         {
-            InitializeWithParameters(name, rating, district, openTime, imageUrl, 0, 0, 0);
+            InitializeWithParameters(name, rating, district, openTime, imageUrl, "", 0, 0, 0);
         }
 
         // 带更多参数的构造函数（包括POI_ID和坐标）
         public ScenicInfoWindow(string name, string rating, string district, string openTime, string imageUrl,
-                               int poiId, double longitude, double latitude)
+                       int poiId, double longitude, double latitude)
             : this()
         {
-            InitializeWithParameters(name, rating, district, openTime, imageUrl, poiId, longitude, latitude);
+            InitializeWithParameters(name, rating, district, openTime, imageUrl, "", poiId, longitude, latitude);
         }
 
+        public ScenicInfoWindow(string name, string rating, string address, string district, string openTime,
+                       string imageUrl, int poiId, double longitude, double latitude)
+            : this()
+        {
+            InitializeWithParameters(name, rating, district, openTime, imageUrl, address, poiId, longitude, latitude);
+        }
         // 初始化方法，避免代码重复
         private void InitializeWithParameters(string name, string rating, string district, string openTime,
-                                            string imageUrl, int poiId, double longitude, double latitude)
+                                            string imageUrl, string address, int poiId, double longitude, double latitude)
         {
             _currentPoiName = name ?? "未知景点";
             _longitude = longitude;
@@ -57,6 +63,14 @@ namespace SmartNanjingTravel
             TxtName.Text = _currentPoiName;
             TxtRating.Text = $"评分：{rating ?? "暂无"}";
             TxtDistrict.Text = $"行政区：{district ?? "未知"}";
+            if (!string.IsNullOrEmpty(address))
+            {
+                TxtAddress.Text = $"地址：{address}";
+            }
+            else
+            {
+                TxtAddress.Text = "地址：暂无地址信息";
+            }
             TxtOpenTime.Text = openTime ?? "暂无营业时间信息";
 
             // 加载图片
@@ -80,6 +94,7 @@ namespace SmartNanjingTravel
             // 检查是否已收藏
             CheckFavoriteStatus();
         }
+
 
         private void CheckFavoriteStatus()
         {
@@ -137,6 +152,7 @@ namespace SmartNanjingTravel
                     if (_isFavorite)
                     {
                         // 取消收藏
+                        // 调用FavoriteService模块的RemoveFavorite方法
                         if (App.FavoriteService.RemoveFavorite(App.CurrentUserId, _poiId))
                         {
                             _isFavorite = false;
@@ -152,7 +168,7 @@ namespace SmartNanjingTravel
                             PoiId = _poiId,
                             Name = _currentPoiName,
                             District = TxtDistrict.Text.Replace("行政区：", ""),
-                            Address = "",
+                            Address = TxtAddress.Text.Replace("地址：", ""),
                             Latitude = _latitude,
                             Longitude = _longitude,
                             Rating = TxtRating.Text.Replace("评分：", ""),

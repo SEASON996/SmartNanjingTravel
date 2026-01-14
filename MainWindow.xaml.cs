@@ -401,7 +401,7 @@ namespace SmartNanjingTravel
                                 }
 
                                 // 传递更多参数给ScenicInfoWindow
-                                var win = new ScenicInfoWindow(name, rating, district, openTime, imageUrl,
+                                var win = new ScenicInfoWindow(name, rating, address, district, openTime, imageUrl,
                                                                poiId, longitude, latitude);
                                 win.Owner = this;
                                 win.ShowDialog();
@@ -1066,7 +1066,7 @@ namespace SmartNanjingTravel
                 var allRatings = new List<double>();
                 var districtRatings = new Dictionary<string, List<double>>();
 
-                // 方法1：从 AmapPoiViewModel 的 AddressInfoList 获取数据
+                // 从 AmapPoiViewModel 的 AddressInfoList 获取数据
                 if (_amapPoiViewModel?.AddressInfoList != null && _amapPoiViewModel.AddressInfoList.Count > 0)
                 {
                     foreach (var addressInfo in _amapPoiViewModel.AddressInfoList)
@@ -1080,7 +1080,6 @@ namespace SmartNanjingTravel
                             if (double.TryParse(ratingStr, out double rating))
                             {
                                 allRatings.Add(rating);
-
                                 // 按行政区统计
                                 string district = string.IsNullOrEmpty(addressInfo.Adname)
                                     ? "未知"
@@ -1095,25 +1094,8 @@ namespace SmartNanjingTravel
                         }
                     }
                 }
-
-                // 方法2：如果上面没数据，尝试从地图图层获取
-                if (allRatings.Count == 0)
-                {
-                    // 从 FeatureCollectionLayer 获取数据
-                    var scenicLayer = MyMapView.Map.OperationalLayers
-                        .FirstOrDefault(l => l.Id == "ScenicSpotsLayer") as FeatureCollectionLayer;
-
-                    if (scenicLayer != null)
-                    {
-                        // 这里需要异步查询，所以可能需要修改方法为 async
-                        // 简化处理：直接从 _amapPoiViewModel 获取数据
-                    }
-                
-                }
-
                 // 更新UI
                 UpdateStatisticsUI(allRatings, districtRatings, DateTime.Now);
-
                 // 创建图表（如果数据为空，显示空图表）
                 if (allRatings.Count > 0)
                 {
