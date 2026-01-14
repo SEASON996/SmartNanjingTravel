@@ -83,7 +83,24 @@ namespace SmartNanjingTravel.Models.Amap
                             if (poi.TryGetProperty("biz_ext", out var biz) && biz.ValueKind == JsonValueKind.Object)
                             {
                                 info.Rating = biz.TryGetProperty("rating", out var r) ? r.GetString() ?? "" : "";
-                                info.Opentime = biz.TryGetProperty("open_time", out var ot) ? ot.GetString() ?? "" : "";
+
+                                // 尝试多个可能的字段名
+                                if (biz.TryGetProperty("open_time", out var ot))
+                                {
+                                    info.Opentime = ot.GetString() ?? "";
+                                }
+                                else if (biz.TryGetProperty("opentime", out var ot1))
+                                {
+                                    info.Opentime = ot1.GetString() ?? "";
+                                }
+                                else if (biz.TryGetProperty("opentime2", out var ot2))
+                                {
+                                    info.Opentime = ot2.GetString() ?? "";
+                                }
+                                else
+                                {
+                                    info.Opentime = "营业时间未知";
+                                }
                             }
 
                             // 经纬度 - 更安全的写法

@@ -8,7 +8,12 @@ using Esri.ArcGISRuntime.UI.Controls;
 using Microsoft.Win32;
 using OxyPlot;
 using OxyPlot.Axes;
+using OxyPlot.Legends;
 using OxyPlot.Series;
+using SmartNanjingTravel.Models;
+using SmartNanjingTravel.Services;
+using SmartNanjingTravel.ViewModels;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -21,10 +26,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using SmartNanjingTravel.Services;
-using SmartNanjingTravel.Models;
-using SmartNanjingTravel.ViewModels;
-using System.Collections.ObjectModel;
 
 namespace SmartNanjingTravel
 {
@@ -1073,7 +1074,7 @@ namespace SmartNanjingTravel
                     {
                         if (!string.IsNullOrEmpty(addressInfo.Rating))
                         {
-                            // 处理评分字符串（可能需要清理非数字字符）
+                            // 处理评分字符串
                             string ratingStr = addressInfo.Rating.Replace("暂无评分", "0")
                                                                  .Replace("暂无", "0");
 

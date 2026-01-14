@@ -75,9 +75,4 @@ namespace SmartNanjingTravel.Models.Amap
         public string Photos { get; set; }
     }
 }
-namespace SmartNanjingTravel.Models.Amap
-{
-    class AmapResponseModels
-    {
-    }
-}
+

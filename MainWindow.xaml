@@ -38,14 +38,14 @@
         <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Outline}"/>
     </Style>
 </Window.Resources>
-<Grid>
-    <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="160" />
-        <ColumnDefinition Width="*" />
-    </Grid.ColumnDefinitions>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="160" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
-    <!-- 左侧导航栏 -->
-    <Grid Grid.Column="0" Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}">
+        <!-- 左侧导航栏 -->
+        <Grid Grid.Column="0" Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -135,8 +135,8 @@
         </Grid>
         <!-- 导航按钮列表 -->
     
-    <!-- 右侧主内容区 -->
-    <Grid Grid.Column="1" Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}">
+        <!-- 右侧主内容区 -->
+        <Grid Grid.Column="1" Background="{DynamicResource MaterialDesign.Brush.SurfaceVariant}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
