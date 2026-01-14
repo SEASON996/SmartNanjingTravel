@@ -441,21 +441,7 @@ namespace SmartNanjingTravel.ViewModels
                 }
                 return Math.Abs(hash);
             }
-        }
-
-
-        // 辅助方法：根据景点名称确定分类ID
-        private int GetCategoryId(string poiName)
-        {
-            // 简单的分类逻辑，可以根据需要扩展
-            if (poiName.Contains("博物馆") || poiName.Contains("纪念馆"))
-                return 2; // 博物馆
-            else if (poiName.Contains("公园") || poiName.Contains("山") || poiName.Contains("湖"))
-                return 3; // 自然风光
-            else if (poiName.Contains("美食") || poiName.Contains("小吃"))
-                return 4; // 美食购物
-            else
-                return 1; // 默认历史遗迹
+        
         }
 
         #region INotifyPropertyChanged

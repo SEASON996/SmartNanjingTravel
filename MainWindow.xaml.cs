@@ -1317,7 +1317,7 @@ namespace SmartNanjingTravel
                 StartAngle = 0,
                 OutsideLabelFormat = "{1}: {0}个",
                 InsideLabelFormat = "",
-                Diameter = 0.85
+                Diameter = 0.8
             };
 
             // 定义颜色方案
