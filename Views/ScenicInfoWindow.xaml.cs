@@ -19,17 +19,7 @@ namespace SmartNanjingTravel
         public ScenicInfoWindow()
         {
             InitializeComponent();
-
-            // 设计器模式填充测试数据
-            if (DesignerProperties.GetIsInDesignMode(this))
-            {
-                TxtName.Text = "中山陵";
-                TxtRating.Text = "评分：5.0";
-                TxtDistrict.Text = "行政区：玄武区";
-                TxtOpenTime.Text = "08:30-17:00（周一闭馆）";
-            }
         }
-
         // 带参数的构造函数（修复递归调用）
         public ScenicInfoWindow(string name, string rating, string district, string openTime, string imageUrl)
             : this()
@@ -58,7 +48,7 @@ namespace SmartNanjingTravel
             _currentPoiName = name ?? "未知景点";
             _longitude = longitude;
             _latitude = latitude;
-            _poiId = poiId;
+            _poiId = poiId > 0 ? poiId : FindOrCreatePoiId();
 
             TxtName.Text = _currentPoiName;
             TxtRating.Text = $"评分：{rating ?? "暂无"}";
@@ -71,50 +61,50 @@ namespace SmartNanjingTravel
             {
                 TxtAddress.Text = "地址：暂无地址信息";
             }
-            TxtOpenTime.Text = openTime ?? "暂无营业时间信息";
+            TxtOpenTime.Text = openTime ?? "暂无开放时间信息";
 
-            // 加载图片
-            if (!string.IsNullOrEmpty(imageUrl))
-            {
-                try
-                {
-                    BitmapImage bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.UriSource = new Uri(imageUrl, UriKind.Absolute);
-                    bitmap.EndInit();
-                    ImgScenic.Source = bitmap;
-                    ImgScenic.Visibility = Visibility.Visible;
-                }
-                catch
-                {
-                    ImgScenic.Visibility = Visibility.Collapsed;
-                }
-            }
+            LoadImage(imageUrl);
 
             // 检查是否已收藏
             CheckFavoriteStatus();
         }
 
+        private void LoadImage(string imageUrl)
+        {
+            if (string.IsNullOrEmpty(imageUrl))
+            {
+                ImgScenic.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            try
+            {
+                BitmapImage bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(imageUrl, UriKind.Absolute);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                ImgScenic.Source = bitmap;
+                ImgScenic.Visibility = Visibility.Visible;
+            }
+            catch
+            {
+                ImgScenic.Visibility = Visibility.Collapsed;
+            }
+        }
 
         private void CheckFavoriteStatus()
         {
             try
             {
-                // 根据POI名称或坐标查找POI ID
-                if (_poiId == 0)
-                {
-                    _poiId = FindOrCreatePoiId();
-                }
-
-                if (_poiId > 0)
-                {
-                    _isFavorite = App.FavoriteService.IsFavorite(App.CurrentUserId, _poiId);
-                    UpdateFavoriteIcon();
-                }
+                _isFavorite = App.FavoriteService.IsFavorite(App.CurrentUserId, _poiId);
+                UpdateFavoriteIcon();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"检查收藏状态失败: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"检查收藏状态失败: {ex.Message}");
+                _isFavorite = false;
+                UpdateFavoriteIcon();
             }
         }
 
@@ -142,51 +132,42 @@ namespace SmartNanjingTravel
         {
             try
             {
-                if (_poiId <= 0)
+                if (_isFavorite)
                 {
-                    _poiId = FindOrCreatePoiId();
-                }
-
-                if (_poiId > 0)
-                {
-                    if (_isFavorite)
+                    // 取消收藏
+                    // 调用FavoriteService模块的RemoveFavorite方法
+                    if (App.FavoriteService.RemoveFavorite(App.CurrentUserId, _poiId))
                     {
-                        // 取消收藏
-                        // 调用FavoriteService模块的RemoveFavorite方法
-                        if (App.FavoriteService.RemoveFavorite(App.CurrentUserId, _poiId))
-                        {
-                            _isFavorite = false;
-                            MessageBox.Show("已取消收藏", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                        }
+                        _isFavorite = false;
+                        MessageBox.Show("已取消收藏", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
-                    else
+                }
+                else
+                {
+                    // 添加收藏 - 传递景点信息
+                    var favorite = new FavoriteItem
                     {
-                        // 添加收藏 - 传递完整的景点信息
-                        var favorite = new FavoriteItem
-                        {
-                            UserId = App.CurrentUserId,
-                            PoiId = _poiId,
-                            Name = _currentPoiName,
-                            District = TxtDistrict.Text.Replace("行政区：", ""),
-                            Address = TxtAddress.Text.Replace("地址：", ""),
-                            Latitude = _latitude,
-                            Longitude = _longitude,
-                            Rating = TxtRating.Text.Replace("评分：", ""),
-                            OpenTime = TxtOpenTime.Text,
-                            Photos = ImgScenic.Source?.ToString() ?? "",
-                            Notes = $"收藏于 {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
-                            FavoriteTime = DateTime.Now
-                        };
-
-                        if (App.FavoriteService.AddFavorite(favorite))
-                        {
-                            _isFavorite = true;
-                            MessageBox.Show("收藏成功！", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
-                        }
+                        UserId = App.CurrentUserId,
+                        PoiId = _poiId,
+                        Name = _currentPoiName,
+                        District = TxtDistrict.Text.Replace("行政区：", ""),
+                        Address = TxtAddress.Text.Replace("地址：", ""),
+                        Latitude = _latitude,
+                        Longitude = _longitude,
+                        Rating = TxtRating.Text.Replace("评分：", ""),
+                        OpenTime = TxtOpenTime.Text,
+                        Photos = ImgScenic.Source?.ToString() ?? "",
+                        Notes = $"收藏于 {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                        FavoriteTime = DateTime.Now
+                    };
+                    if (App.FavoriteService.AddFavorite(favorite))
+                    {
+                        _isFavorite = true;
+                        MessageBox.Show("收藏成功！", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
 
-                    UpdateFavoriteIcon();
                 }
+                UpdateFavoriteIcon();
             }
             catch (Exception ex)
             {
@@ -209,7 +190,6 @@ namespace SmartNanjingTravel
         }
 
         // 导航到景点按钮事件（修改后的方法）
-        // 导航到景点按钮事件（修改后的方法）
         private async void BtnGoHere_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -227,12 +207,8 @@ namespace SmartNanjingTravel
                         Esri.ArcGISRuntime.Geometry.SpatialReferences.Wgs84
                     );
 
-                    // 定位到景点位置，设置缩放级别为5000米（适当放大，能看到周围环境）
+                    // 定位到景点位置，设置缩放级别为5000米
                     await mainWindow.MyMapView.SetViewpointCenterAsync(mapPoint, 5000);
-
-                    // 在状态栏显示提示（可选）
-                    // 可以在这里添加一个简单的提示，但不是必需的
-                    // 或者可以设置一个文本提示，几秒后消失
                 }
                 else
                 {

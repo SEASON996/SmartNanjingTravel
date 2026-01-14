@@ -107,7 +107,7 @@
                     </TextBlock>
 
                     <!-- 评分和行政区信息 -->
-                    <StackPanel Margin="0,0,0,16">
+                    <StackPanel Margin="0,0,0,10">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <materialDesign:PackIcon 
                                 Kind="Star"
@@ -188,14 +188,14 @@
                                 x:Name="TxtOpenTime"
                                 FontSize="13"
                                 TextWrapping="Wrap"
-                                Margin="0,0,0,0">
+                                MaxWidth="280">
                                 暂无营业时间信息
                             </TextBlock>
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
-                <!-- 底部操作按钮（简化版） -->
+                <!-- 底部操作按钮 -->
                 <StackPanel
                     Grid.Row="3"
                     Margin="8"
@@ -216,9 +216,6 @@
                         <materialDesign:PackIcon x:Name="FavoriteIcon" 
                             Kind="HeartOutline" />
                     </Button>
-
-                    <!-- 分享按钮 -->
-
                 </StackPanel>
             </Grid>
         </materialDesign:Card>

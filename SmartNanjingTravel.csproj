@@ -11,18 +11,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Data\Travel.geodatabase" />
     <None Remove="Image\f89ef1467371dac8c4a7b94c2a43cc48.jpg" />
     <None Remove="Image\icons1.png" />
     <None Remove="Travel.db" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Data\Travel.geodatabase">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <AdditionalFiles Include="Data\Travel.db">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </AdditionalFiles>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Data\Travel.geodatabase">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
